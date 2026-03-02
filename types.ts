@@ -24,6 +24,7 @@ export interface SRSStatus {
     nextReview: number;    // Timestamp (ms)
     reps: number;          // Total repetitions (legacy/stat)
     mustReviewConsecutiveCorrect?: number; // Track consecutive correct answers for exiting Must Review
+    isLeech?: boolean;     // Mark as Leech if lapses > 8
 }
 
 export interface HighScoreRecord {

@@ -240,6 +240,7 @@ const AnkiMode: React.FC<ReflexViewProps> = ({ vocab, srsStatus, onNext, current
                     >
                         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/diagmonds-light.png')] opacity-5 mix-blend-overlay pointer-events-none"></div>
                         {srsStatus?.status === 'review' && <div className="absolute top-6 left-6 w-3 h-3 bg-emerald-500 rounded-full animate-ping shadow-[0_0_10px_#10b981]"></div>}
+                        {srsStatus?.isLeech && <div className="absolute top-6 right-6 text-[10px] font-black text-rose-500 border border-rose-500 px-2 py-0.5 rounded bg-rose-950/50 animate-pulse shadow-[0_0_10px_rgba(244,63,94,0.5)]">LEECH</div>}
                         
                         <div className="w-full h-full flex flex-col items-center justify-center overflow-hidden relative z-10" style={{ containerType: 'inline-size' }}>
                             <div 

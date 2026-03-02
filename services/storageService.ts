@@ -119,7 +119,8 @@ export const calculateSRS = (current: SRSStatus | undefined, rating: 1 | 2 | 3 |
         lastReviewed: 0,
         nextReview: now,
         reps: 0,
-        mustReviewConsecutiveCorrect: 0
+        mustReviewConsecutiveCorrect: 0,
+        isLeech: false
     };
 
     // Update stats
@@ -133,72 +134,127 @@ export const calculateSRS = (current: SRSStatus | undefined, rating: 1 | 2 | 3 |
         if (rating === 3) effectiveRating = 2; // Treat Good as Hard for interval
     }
 
-    // --- MUST REVIEW LOGIC ---
+    // --- MUST REVIEW LOGIC (Legacy/Special Mode) ---
     if (status.status === 'must_review') {
         if (effectiveRating >= 3) {
             status.mustReviewConsecutiveCorrect = (status.mustReviewConsecutiveCorrect || 0) + 1;
-            
-            // Check exit condition: 2 consecutive correct answers (Level 3 or 4)
             if (status.mustReviewConsecutiveCorrect >= 2) {
-                // Graduate from Must Review
                 status.status = 'review';
                 status.mustReviewConsecutiveCorrect = 0;
-                
-                // Set interval based on rating
-                if (effectiveRating === 3) {
-                    status.interval = 1.5; // 1.5 days
-                    status.nextReview = now + (1.5 * ONE_DAY);
-                } else {
-                    status.interval = 3; // 3 days
-                    status.nextReview = now + (3 * ONE_DAY);
-                }
+                status.interval = effectiveRating === 3 ? 1.5 : 3;
+                status.nextReview = now + (status.interval * ONE_DAY);
             } else {
-                // Stay in must_review, schedule next review shortly (e.g., 10 mins)
                 status.nextReview = now + (10 * ONE_MINUTE);
             }
         } else {
-            // Rating 1 or 2
-            // Reset consecutive correct counter if failed
             status.mustReviewConsecutiveCorrect = 0;
-            // Stay in must_review, immediate retry
             status.nextReview = now + ONE_MINUTE;
         }
         return status;
     }
 
-    // --- STANDARD LOGIC ---
-    
-    // Level 1 (AGAIN - Pink)
-    if (rating === 1) {
+    // --- LEECH CHECK ---
+    if (effectiveRating === 1) {
         status.lapses = (status.lapses || 0) + 1;
-        status.status = 'learning'; // Reset to learning
-        status.stepIndex = 0;
-        status.nextReview = now + ONE_MINUTE; // Session queue handles immediate repetition
-        return status;
+        if (status.lapses > 8) {
+            status.isLeech = true;
+        }
     }
 
-    // Level 2 (HARD - Orange)
-    if (effectiveRating === 2) {
-        status.nextReview = now + (15 * ONE_HOUR);
-        // Keep current status or move to learning? Usually Hard implies learning step.
-        if (status.status === 'review') status.status = 'relearning';
-        return status;
+    // --- PHASE 1: NEW & LEARNING ---
+    if (status.status === 'new' || status.status === 'learning' || status.status === 'relearning') {
+        // Again (1)
+        if (effectiveRating === 1) {
+            status.status = 'learning';
+            status.stepIndex = 0;
+            status.nextReview = now + ONE_MINUTE;
+            return status;
+        }
+
+        // Hard (2)
+        if (effectiveRating === 2) {
+            status.status = 'learning';
+            // Keep stepIndex same or reset? Usually Hard doesn't advance.
+            // Description: "Vẫn ở Learning", "Gặp lại sau 5 phút".
+            status.nextReview = now + (5 * ONE_MINUTE);
+            return status;
+        }
+
+        // Good (3)
+        if (effectiveRating === 3) {
+            // "Nếu vượt qua 2 lần Good -> Chuyển sang Review (1 ngày)"
+            // Step 0 -> Step 1 (10 min)
+            // Step 1 -> Review (1 day)
+            if (status.stepIndex >= 1) {
+                status.status = 'review';
+                status.interval = 1; // 1 day
+                status.nextReview = now + ONE_DAY;
+                status.stepIndex = 0; // Reset for future
+            } else {
+                status.status = 'learning';
+                status.stepIndex = 1;
+                status.nextReview = now + (10 * ONE_MINUTE);
+            }
+            return status;
+        }
+
+        // Easy (4)
+        if (effectiveRating === 4) {
+            status.status = 'review';
+            status.interval = 4; // 4 days
+            status.nextReview = now + (4 * ONE_DAY);
+            status.stepIndex = 0;
+            return status;
+        }
     }
 
-    // Level 3 (GOOD - Green)
-    if (effectiveRating === 3) {
-        status.status = 'review';
-        status.interval = 1.5; // 1.5 days
-        status.nextReview = now + (1.5 * ONE_DAY);
-        return status;
-    }
+    // --- PHASE 2: REVIEW ---
+    if (status.status === 'review') {
+        const oldInterval = status.interval;
+        const oldEF = status.easeFactor;
 
-    // Level 4 (EASY - Blue)
-    if (effectiveRating === 4) {
-        status.status = 'review';
-        status.interval = 3; // 3 days
-        status.nextReview = now + (3 * ONE_DAY);
-        return status;
+        // Fuzz Factor: +/- 5% (0.95 to 1.05)
+        const fuzz = 0.95 + Math.random() * 0.1;
+
+        // Again (1)
+        if (effectiveRating === 1) {
+            status.status = 'learning'; // "Phải học lại như từ mới"
+            status.interval = 0;
+            status.stepIndex = 0;
+            status.easeFactor = Math.max(1.3, oldEF - 0.20);
+            status.nextReview = now + ONE_MINUTE; // Treat as New/Again
+            return status;
+        }
+
+        // Hard (2)
+        if (effectiveRating === 2) {
+            // I_new = I_old * 1.2
+            // EF_new = EF_old - 0.15
+            status.interval = oldInterval * 1.2 * fuzz;
+            status.easeFactor = Math.max(1.3, oldEF - 0.15);
+            status.nextReview = now + (status.interval * ONE_DAY);
+            return status;
+        }
+
+        // Good (3)
+        if (effectiveRating === 3) {
+            // I_new = I_old * EF_old
+            // EF unchanged
+            status.interval = oldInterval * oldEF * fuzz;
+            // EF stays same
+            status.nextReview = now + (status.interval * ONE_DAY);
+            return status;
+        }
+
+        // Easy (4)
+        if (effectiveRating === 4) {
+            // I_new = I_old * EF_old * 1.3
+            // EF_new = EF_old + 0.15
+            status.interval = oldInterval * oldEF * 1.3 * fuzz;
+            status.easeFactor = Math.max(1.3, oldEF + 0.15); // No upper limit specified, but usually capped at 2.5 or higher? User didn't specify cap.
+            status.nextReview = now + (status.interval * ONE_DAY);
+            return status;
+        }
     }
 
     return status;
@@ -397,7 +453,9 @@ export const resetLessonStats = (db: AppDatabase, lessonId: string, type?: 'voca
                 lapses: 0,
                 lastReviewed: 0,
                 nextReview: now,
-                reps: 0
+                reps: 0,
+                mustReviewConsecutiveCorrect: 0,
+                isLeech: false
             };
         }
     });
