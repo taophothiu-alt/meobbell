@@ -13,6 +13,7 @@ const DEFAULT_STATS: UserStats = {
 const DEFAULT_DB: AppDatabase = {
     vocab: [],
     favorites: [],
+    hiddenLessons: [], // New field
     mistakes: [],
     mistakeStreaks: {}, 
     srs: {},
@@ -20,6 +21,7 @@ const DEFAULT_DB: AppDatabase = {
     config: { 
         kanjiSize: 90, // Reduced by ~30% from 130
         autoPlayAudio: true,
+        soundEnabled: true, // Default true
         writingTimer: 0, 
         writingMode: 'sequential'
     },
@@ -69,6 +71,7 @@ export const loadDB = (): AppDatabase => {
                 ...DEFAULT_DB, 
                 ...parsed, 
                 vocab: migratedVocab,
+                hiddenLessons: parsed.hiddenLessons || [], // Ensure field exists
                 stats: { ...DEFAULT_STATS, ...parsed.stats },
                 config: { ...DEFAULT_DB.config, ...parsed.config },
                 highScores: { ...DEFAULT_DB.highScores, ...(parsed.highScores || {}) }
@@ -281,8 +284,12 @@ export const getSRSIntervalDisplay = (current: SRSStatus | undefined, rating: 1 
 // Update: SRS can now filter by type (default 'vocab')
 export const getDueVocab = (db: AppDatabase, type: 'vocab' | 'kanji' = 'vocab'): Vocab[] => {
     const now = Date.now();
+    const hiddenSet = new Set(db.hiddenLessons || []);
+    
     return db.vocab.filter(v => {
         if (v.type !== type) return false;
+        if (hiddenSet.has(v.lesson)) return false; // Skip hidden lessons
+        
         const srs = db.srs[v.id];
         // If no SRS, it's new (due immediately). If SRS exists, check nextReview.
         // Must Review items are prioritized

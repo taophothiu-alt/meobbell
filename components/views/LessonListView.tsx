@@ -9,7 +9,10 @@ interface LessonListProps {
 }
 
 export const LessonListView: React.FC<LessonListProps> = ({ db, onSelect }) => {
-    const lessons = (Array.from(new Set(db.vocab.map(v => v.lesson))) as string[]).sort((a, b) => parseInt(a) - parseInt(b));
+    const hiddenSet = new Set(db.hiddenLessons || []);
+    const lessons = (Array.from(new Set(db.vocab.map(v => v.lesson))) as string[])
+        .filter(lid => !hiddenSet.has(lid))
+        .sort((a, b) => parseInt(a) - parseInt(b));
 
     // 15 Bright Neon Colors
     const NEON_COLORS = [

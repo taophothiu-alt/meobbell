@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Vocab, AppDatabase, CramSession } from '../../types';
-import { playSfx } from '../../services/audioService';
+import { playSfx, speakText } from '../../services/audioService';
 import { motion } from 'motion/react';
 
 interface CramModeViewProps {
@@ -489,6 +489,15 @@ export const CramModeView: React.FC<CramModeViewProps> = ({ vocabList, lessonId,
     const mainText = currentVocab.kj !== '-' ? currentVocab.kj : currentVocab.ka;
     const subText = currentVocab.kj !== '-' ? currentVocab.ka : '';
 
+    const handleSpeak = (e?: React.MouseEvent) => {
+        e?.stopPropagation();
+        if (currentVocab.type === 'kanji') {
+            speakText(currentVocab.hv || currentVocab.kj, 'vi-VN');
+        } else {
+            speakText(currentVocab.ka || currentVocab.kj, 'ja-JP');
+        }
+    };
+
     return (
         <div className="fixed inset-0 z-[200] flex flex-row overflow-hidden font-sans" style={{ backgroundColor: COLORS.BG }}>
             
@@ -498,6 +507,12 @@ export const CramModeView: React.FC<CramModeViewProps> = ({ vocabList, lessonId,
                     
                     {/* LEFT: HOME BUTTON */}
                     <div className="pointer-events-auto relative">
+                        <button 
+                            onClick={handleSpeak}
+                            className="w-12 h-12 rounded-xl bg-slate-800 border-2 border-slate-600 shadow-lg backdrop-blur-md flex items-center justify-center text-slate-400 hover:text-white hover:border-white transition active:scale-95"
+                        >
+                            <i className="fas fa-volume-up text-lg"></i>
+                        </button>
                     </div>
 
                     {/* CENTER: REMOVED LOCK TIMER */}

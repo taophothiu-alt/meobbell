@@ -46,9 +46,12 @@ export interface UserStats {
 export interface AppConfig {
     kanjiSize: number;
     autoPlayAudio: boolean;
+    soundEnabled: boolean; // New setting
     lastLessonId?: string;
     writingTimer: number; 
     writingMode: 'sequential' | 'shuffle';
+    voiceURI_ja?: string; // Preferred Japanese voice
+    voiceURI_vi?: string; // Preferred Vietnamese voice
 }
 
 export interface CramSession {
@@ -73,6 +76,7 @@ export interface HistoryState {
 export interface AppDatabase {
     vocab: Vocab[];
     favorites: string[];
+    hiddenLessons: string[]; // New field
     mistakes: string[];
     mistakeStreaks: Record<string, number>; 
     srs: Record<string, SRSStatus>; 

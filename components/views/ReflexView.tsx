@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Vocab, SRSStatus, AppDatabase } from '../../types';
-import { playSfx } from '../../services/audioService';
+import { playSfx, speakText } from '../../services/audioService';
 import { getSRSIntervalDisplay } from '../../services/storageService';
 import { motion, useAnimation } from 'motion/react';
 import { RotateCw, Check, X } from 'lucide-react';
@@ -187,6 +187,23 @@ const AnkiMode: React.FC<ReflexViewProps> = ({ vocab, srsStatus, onNext, current
     const hintLabel = isReversed ? "GỢI Ý (KANA)" : "GỢI Ý (HÁN VIỆT)";
     const hintContent = isReversed ? vocab.ka : vocab.hv;
 
+    const handleSpeak = (e?: React.MouseEvent) => {
+        e?.stopPropagation();
+        if (vocab.type === 'kanji') {
+            speakText(vocab.hv || vocab.kj, 'vi-VN');
+        } else {
+            speakText(vocab.ka || vocab.kj, 'ja-JP');
+        }
+    };
+
+    // Auto-play audio when flipped
+    useEffect(() => {
+        if (isFlipped) {
+            // Small delay to allow flip animation to start
+            setTimeout(() => handleSpeak(), 200);
+        }
+    }, [isFlipped]);
+
     return (
         <div className="w-full h-full flex flex-col items-center justify-center p-3 md:p-4 overflow-hidden">
              <div className="w-full max-w-md mx-auto flex items-center justify-center relative z-20 shrink-0 mb-4 pt-14">
@@ -195,6 +212,14 @@ const AnkiMode: React.FC<ReflexViewProps> = ({ vocab, srsStatus, onNext, current
                      {lessonId === 'SRS' ? 'ÔN TẬP' : `BÀI ${lessonId}`}
                  </div>
                  
+                 {/* Speaker Button */}
+                 <button 
+                    onClick={handleSpeak}
+                    className="absolute left-[80px] w-8 h-8 rounded-full bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500 hover:text-white flex items-center justify-center transition border border-indigo-500/30 shadow-[0_0_10px_rgba(99,102,241,0.2)]"
+                 >
+                     <i className="fas fa-volume-up text-xs"></i>
+                 </button>
+
                  {/* Center: Progress Bar */}
                  <div className="flex flex-col items-center w-32 gap-1">
                      <div className="w-full h-2 bg-slate-800 rounded-full flex overflow-hidden border border-white/10">

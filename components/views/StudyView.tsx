@@ -1,6 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Vocab } from '../../types';
+import { speakText } from '../../services/audioService';
 
 interface StudyViewProps {
     vocab: Vocab;
@@ -170,6 +171,24 @@ export const StudyView: React.FC<StudyViewProps> = ({
     // Use clamp to ensure font size stays within reasonable bounds on all devices
     const fontSize = `clamp(2rem, min(${200 * userScale}px, ${80 / textLength}cqi), 180px)`;
 
+    const handleSpeak = (e?: React.MouseEvent) => {
+        e?.stopPropagation();
+        if (studyType === 'kanji' || vocab.type === 'kanji') {
+            speakText(vocab.hv || vocab.kj, 'vi-VN');
+        } else {
+            speakText(vocab.ka || vocab.kj, 'ja-JP');
+        }
+    };
+
+    // Auto-play audio when vocab changes
+    useEffect(() => {
+        // Small delay to ensure smooth transition before playing
+        const timer = setTimeout(() => {
+            handleSpeak();
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [vocab, studyType]);
+
     return (
         <section 
             className="absolute inset-0 flex flex-col animate-slide-up overflow-hidden bg-slate-950/80 backdrop-blur-sm"
@@ -223,6 +242,12 @@ export const StudyView: React.FC<StudyViewProps> = ({
                     onClick={() => onKanjiClick(mainVisual)}
                 >
                     <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/diagmonds-light.png')] opacity-10 mix-blend-overlay"></div>
+                    
+                    {/* Speaker Button */}
+                    <div className="absolute top-4 left-4 text-slate-600 hover:text-emerald-400 transition cursor-pointer z-20" onClick={handleSpeak}>
+                        <i className="fas fa-volume-up text-2xl drop-shadow-[0_0_10px_rgba(16,185,129,0.5)]"></i>
+                    </div>
+
                     <div className="absolute top-4 right-4 text-slate-600 hover:text-pink-500 transition cursor-pointer z-20" onClick={(e) => { e.stopPropagation(); onToggleFav(); }}>
                         <i className={`fas fa-heart text-2xl ${isFavorite ? 'text-pink-500 drop-shadow-[0_0_10px_rgba(236,72,153,0.5)]' : ''}`}></i>
                     </div>

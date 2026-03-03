@@ -13,6 +13,7 @@ import { KanjiNetworkView } from './components/views/KanjiNetworkView';
 import { RuleExplorerView } from './components/views/RuleExplorerView';
 import { KanjiExplorerView } from './components/views/KanjiExplorerView';
 import { TypingModeView } from './components/views/TypingModeView';
+import { SettingsView } from './components/views/SettingsView';
 import { loadDB, saveDB, updateStats, calculateSRS, getDueVocab, exportVocabData, resetLessonStats } from './services/storageService';
 import { AppDatabase, ViewName, ModeName, Vocab } from './types';
 
@@ -72,17 +73,16 @@ function App() {
     const [sessionMistakes, setSessionMistakes] = useState<Set<string>>(new Set());
     const [isReviewSession, setIsReviewSession] = useState(false);
 
-    // ... (keep useEffects for highscore, lastLessonId, toasts same) ...
     useEffect(() => {
-        const handleNewHighscore = (e: any) => {
+        const handleNewHighscore = (e: CustomEvent) => {
             const { score, mode } = e.detail;
             setShowFireworks(true);
             setNewRecordMsg(`KỶ LỤC MỚI: ${score} ĐIỂM (${mode.toUpperCase()})`);
             setTimeout(() => { setShowFireworks(false); setNewRecordMsg(null); }, 5000);
             setDb(loadDB()); 
         };
-        window.addEventListener('new-highscore', handleNewHighscore);
-        return () => window.removeEventListener('new-highscore', handleNewHighscore);
+        window.addEventListener('new-highscore', handleNewHighscore as EventListener);
+        return () => window.removeEventListener('new-highscore', handleNewHighscore as EventListener);
     }, []);
 
     // Reset session mistakes when starting a new lesson/mode
@@ -328,14 +328,6 @@ function App() {
     const handleSwitchToReflex = () => { setMode('reflex'); setReflexInitialMode('anki'); setView('reflex'); };
     
     // Settings Logic
-    const updateKanjiSize = (size: number) => {
-        setDb(prev => {
-            const newDb = { ...prev, config: { ...prev.config, kanjiSize: size } };
-            saveDB(newDb);
-            return newDb;
-        });
-    };
-
     const handleUpdateDb = (newDb: AppDatabase) => {
         setDb(newDb);
         saveDB(newDb);
@@ -591,46 +583,23 @@ function App() {
                     onOpenFav={() => setShowFavModal(true)}
                 />;
             case 'data-factory':
-                return <DataFactoryView onImport={handleImport} onClose={handleBack} onNotify={showToast} />;
+                return <DataFactoryView 
+                    db={db}
+                    onImport={handleImport} 
+                    onClose={handleBack} 
+                    onNotify={showToast} 
+                    onUpdateDb={(newDb) => setDb(newDb)}
+                />;
             case 'lesson-list':
                 return <LessonListView db={db} onSelect={(id) => { setLessonId(id); changeView('reflex-selector'); }} />;
             case 'settings':
                 return (
-                    <div className="absolute inset-0 bg-black/80 backdrop-blur-xl z-50 flex items-center justify-center p-6 animate-slide-up">
-                        <div className="bg-slate-900 border-2 border-slate-700 rounded-3xl p-8 max-w-md w-full shadow-2xl space-y-8">
-                            <div className="flex justify-between items-center border-b border-slate-700 pb-4">
-                                <h2 className="text-xl font-black text-white uppercase tracking-widest">Cài đặt</h2>
-                                <button onClick={handleBack} className="text-slate-500 hover:text-white"><i className="fas fa-times"></i></button>
-                            </div>
-
-                            {/* Font Size */}
-                            <div className="space-y-3">
-                                <label className="flex justify-between text-xs font-bold text-slate-400 uppercase tracking-wider">
-                                    <span>Cỡ chữ hiển thị (Hira/Kata/Kanji)</span>
-                                    <span className="text-indigo-400">{db.config.kanjiSize}</span>
-                                </label>
-                                <input 
-                                    type="range" min="80" max="300" step="10" 
-                                    value={db.config.kanjiSize} 
-                                    onChange={(e) => updateKanjiSize(parseInt(e.target.value))}
-                                    className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-500"
-                                />
-                                <div className="h-24 flex items-center justify-center bg-black/30 rounded-xl border border-slate-800">
-                                    <span className="font-serif text-white transition-all duration-200" style={{ fontSize: `${db.config.kanjiSize / 3}px` }}>永</span>
-                                </div>
-                            </div>
-
-                            {/* Export Data */}
-                            <div className="space-y-3 pt-4 border-t border-slate-800">
-                                <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Xuất dữ liệu</div>
-                                <button onClick={() => setShowExportSelector(true)} className="w-full py-4 bg-sky-900/50 border border-sky-600/50 rounded-xl text-sky-400 font-bold text-xs uppercase hover:bg-sky-800 transition flex items-center justify-center gap-2">
-                                    <i className="fas fa-file-export"></i> Mở Menu Xuất
-                                </button>
-                            </div>
-
-                            {/* Deleted Reset Data Button as requested */}
-                        </div>
-                    </div>
+                    <SettingsView 
+                        db={db} 
+                        onClose={handleBack} 
+                        onUpdateDb={(newDb) => setDb(newDb)} 
+                        onOpenExport={() => setShowExportSelector(true)}
+                    />
                 );
             case 'study':
                 if (activeVocab.length === 0) return <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-500 font-black uppercase p-6 text-center gap-4">
