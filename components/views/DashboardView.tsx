@@ -21,6 +21,25 @@ export const DashboardView: React.FC<DashboardProps> = ({ db, onChangeView, onSt
 
     const lastLessonId = db.config.lastLessonId;
 
+    const [showPasswordModal, setShowPasswordModal] = useState(false);
+    const [passwordInput, setPasswordInput] = useState("");
+    const [passwordError, setPasswordError] = useState(false);
+
+    const handleDataFactoryClick = () => {
+        setShowPasswordModal(true);
+        setPasswordInput("");
+        setPasswordError(false);
+    };
+
+    const handlePasswordSubmit = () => {
+        if (passwordInput === "ph0n6123") {
+            setShowPasswordModal(false);
+            onChangeView('data-factory');
+        } else {
+            setPasswordError(true);
+        }
+    };
+
     const BentoBlock = ({ children, className = "", onClick, colorClass = "border-white/10" }: any) => (
         <motion.div 
             whileTap={onClick ? { scale: 0.98 } : {}}
@@ -132,7 +151,7 @@ export const DashboardView: React.FC<DashboardProps> = ({ db, onChangeView, onSt
                         </div>
                         <span className="text-[10px] font-black text-white uppercase tracking-widest text-center">Yêu thích</span>
                     </BentoBlock>
-                    <BentoBlock onClick={() => onChangeView('data-factory')} colorClass="border-fuchsia-500 hover:border-white shadow-[0_0_20px_rgba(217,70,239,0.3)]" className="aspect-[2/1] md:aspect-square flex flex-col items-center justify-center gap-2 group p-4 bg-slate-900/40 backdrop-blur-md">
+                    <BentoBlock onClick={handleDataFactoryClick} colorClass="border-fuchsia-500 hover:border-white shadow-[0_0_20px_rgba(217,70,239,0.3)]" className="aspect-[2/1] md:aspect-square flex flex-col items-center justify-center gap-2 group p-4 bg-slate-900/40 backdrop-blur-md">
                         <div className="w-12 h-12 rounded-full bg-fuchsia-500/10 flex items-center justify-center mb-1 group-hover:bg-fuchsia-500/30 transition-all shadow-[0_0_15px_rgba(217,70,239,0.2)]">
                             <i className="fas fa-database text-2xl md:text-3xl text-fuchsia-500 group-hover:scale-110 transition"></i>
                         </div>
@@ -140,6 +159,39 @@ export const DashboardView: React.FC<DashboardProps> = ({ db, onChangeView, onSt
                     </BentoBlock>
                 </div>
             </div>
+
+            {/* PASSWORD MODAL */}
+            {showPasswordModal && (
+                <div className="absolute inset-0 z-[100] bg-black/90 backdrop-blur-xl flex items-center justify-center p-6 animate-slide-up" onClick={() => setShowPasswordModal(false)}>
+                    <div className="bg-slate-900 border-2 border-fuchsia-500 rounded-3xl p-8 max-w-sm w-full shadow-[0_0_50px_rgba(217,70,239,0.3)] space-y-6" onClick={e => e.stopPropagation()}>
+                        <div className="text-center">
+                            <div className="w-16 h-16 mx-auto bg-fuchsia-500/20 rounded-full flex items-center justify-center mb-4 shadow-[0_0_30px_rgba(217,70,239,0.3)]">
+                                <i className="fas fa-lock text-3xl text-fuchsia-500"></i>
+                            </div>
+                            <h3 className="text-2xl font-black text-white uppercase tracking-widest mb-2">Bảo mật</h3>
+                            <p className="text-slate-400 text-xs font-bold">Vui lòng nhập mật khẩu để truy cập dữ liệu.</p>
+                        </div>
+                        
+                        <div className="space-y-2">
+                            <input 
+                                type="password" 
+                                value={passwordInput}
+                                onChange={(e) => { setPasswordInput(e.target.value); setPasswordError(false); }}
+                                onKeyDown={(e) => e.key === 'Enter' && handlePasswordSubmit()}
+                                placeholder="Nhập mật khẩu..."
+                                className={`w-full bg-black/50 border-2 ${passwordError ? 'border-rose-500 animate-shake' : 'border-slate-700 focus:border-fuchsia-500'} rounded-xl p-4 text-white font-bold outline-none transition-all placeholder:text-slate-600`}
+                                autoFocus
+                            />
+                            {passwordError && <div className="text-rose-500 text-[10px] font-black uppercase tracking-wider text-center">Mật khẩu không đúng</div>}
+                        </div>
+
+                        <div className="flex gap-3">
+                            <button onClick={() => setShowPasswordModal(false)} className="flex-1 py-3 bg-slate-800 rounded-xl text-slate-400 font-black uppercase text-xs hover:bg-slate-700 transition">Hủy</button>
+                            <button onClick={handlePasswordSubmit} className="flex-1 py-3 bg-fuchsia-600 hover:bg-fuchsia-500 rounded-xl text-white font-black uppercase text-xs shadow-lg shadow-fuchsia-500/30 transition active:scale-95">Xác nhận</button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* CALENDAR MODAL */}
             {showCalendar && (
