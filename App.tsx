@@ -621,7 +621,12 @@ function App() {
                     onUpdateDb={(newDb) => setDb(newDb)}
                 />;
             case 'lesson-list':
-                return <LessonListView db={db} onSelect={(id) => { setLessonId(id); changeView('reflex-selector'); }} />;
+                return <LessonListView 
+                    db={db} 
+                    onSelect={(id) => { setLessonId(id); changeView('reflex-selector'); }} 
+                    onUpdateDb={(newDb) => setDb(newDb)}
+                    onNotify={showToast}
+                />;
             case 'settings':
                 return (
                     <SettingsView 
