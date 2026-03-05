@@ -15,6 +15,7 @@ import { KanjiExplorerView } from './components/views/KanjiExplorerView';
 import { TypingModeView } from './components/views/TypingModeView';
 import { SettingsView } from './components/views/SettingsView';
 import { FavoritesManagerView } from './components/views/FavoritesManagerView';
+import { SyncSettingsView } from './components/views/SyncSettingsView';
 import { loadDB, saveDB, updateStats, calculateSRS, getDueVocab, exportVocabData, resetLessonStats, fetchVocabFromServer, saveVocabToServer } from './services/storageService';
 import { AppDatabase, ViewName, ModeName, Vocab } from './types';
 
@@ -611,6 +612,7 @@ function App() {
                     }}
                     onCheckIn={handleCheckIn}
                     onOpenFav={() => changeView('favorites-manager')}
+                    onOpenSync={() => changeView('sync-settings')}
                 />;
             case 'data-factory':
                 return <DataFactoryView 
@@ -627,6 +629,8 @@ function App() {
                     onUpdateDb={(newDb) => setDb(newDb)}
                     onNotify={showToast}
                 />;
+            case 'sync-settings':
+                return <SyncSettingsView onClose={handleBack} onNotify={showToast} />;
             case 'settings':
                 return (
                     <SettingsView 

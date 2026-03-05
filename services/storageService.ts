@@ -1,6 +1,21 @@
 
 import { AppDatabase, STORAGE_KEY, Vocab, UserStats, SRSStatus } from '../types';
 
+// Helper to get JSONBin config dynamically
+export const getJsonBinConfig = () => {
+    try {
+        const storedSecret = localStorage.getItem('JSONBIN_SECRET');
+        const storedBinId = localStorage.getItem('JSONBIN_BIN_ID');
+        
+        return {
+            secret: storedSecret || import.meta.env.VITE_JSONBIN_SECRET || "",
+            binId: storedBinId || import.meta.env.VITE_JSONBIN_BIN_ID || ""
+        };
+    } catch (e) {
+        return { secret: "", binId: "" };
+    }
+};
+
 const DEFAULT_STATS: UserStats = {
     xp: 0,
     level: 1,
@@ -52,30 +67,67 @@ export const getRankByCount = (count: number) => {
 };
 
 export const fetchVocabFromServer = async (): Promise<Vocab[]> => {
+    const config = getJsonBinConfig();
+    
+    // 1. Try local API (Priority)
     try {
         const response = await fetch('/api/vocab');
-        if (!response.ok) throw new Error('Failed to fetch vocab');
-        return await response.json();
-    } catch (error) {
-        console.error('Error fetching vocab:', error);
-        return [];
+        if (response.ok) {
+            const data = await response.json();
+            if (Array.isArray(data)) return data;
+        }
+    } catch (error) { /* Ignore */ }
+
+    // 2. Fallback: Direct JSONBin (for Static Hosting)
+    if (config.secret && config.binId) {
+        try {
+            const res = await fetch(`https://api.jsonbin.io/v3/b/${config.binId}/latest`, {
+                headers: { 'X-Master-Key': config.secret }
+            });
+            if (res.ok) {
+                const json = await res.json();
+                return json.record || [];
+            }
+        } catch (e) {
+            console.error('JSONBin Fetch Error:', e);
+        }
     }
+
+    return [];
 };
 
 export const saveVocabToServer = async (vocab: Vocab[]): Promise<boolean> => {
+    const config = getJsonBinConfig();
+    let saved = false;
+
+    // 1. Try local API
     try {
         const response = await fetch('/api/vocab', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(vocab),
         });
-        return response.ok;
-    } catch (error) {
-        console.error('Error saving vocab:', error);
-        return false;
+        if (response.ok) saved = true;
+    } catch (error) { /* Ignore */ }
+
+    // 2. Try Direct JSONBin
+    if (!saved && config.secret && config.binId) {
+        try {
+            const res = await fetch(`https://api.jsonbin.io/v3/b/${config.binId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Master-Key': config.secret
+                },
+                body: JSON.stringify(vocab)
+            });
+            if (res.ok) saved = true;
+        } catch (e) {
+            console.error('JSONBin Save Error:', e);
+        }
     }
+
+    return saved;
 };
 
 export const loadDB = (): AppDatabase => {
