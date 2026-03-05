@@ -14,7 +14,8 @@ import { RuleExplorerView } from './components/views/RuleExplorerView';
 import { KanjiExplorerView } from './components/views/KanjiExplorerView';
 import { TypingModeView } from './components/views/TypingModeView';
 import { SettingsView } from './components/views/SettingsView';
-import { loadDB, saveDB, updateStats, calculateSRS, getDueVocab, exportVocabData, resetLessonStats } from './services/storageService';
+import { FavoritesManagerView } from './components/views/FavoritesManagerView';
+import { loadDB, saveDB, updateStats, calculateSRS, getDueVocab, exportVocabData, resetLessonStats, fetchVocabFromServer, saveVocabToServer } from './services/storageService';
 import { AppDatabase, ViewName, ModeName, Vocab } from './types';
 
 interface ConfirmModalProps {
@@ -30,6 +31,24 @@ function App() {
     const [db, setDb] = useState<AppDatabase>(loadDB());
     const [view, setView] = useState<ViewName>('dashboard');
     const [viewHistory, setViewHistory] = useState<ViewName[]>([]);
+
+    // Fetch vocab from server on mount
+    useEffect(() => {
+        const syncVocab = async () => {
+            const serverVocab = await fetchVocabFromServer();
+            if (serverVocab.length > 0) {
+                setDb(prev => {
+                    // Merge server vocab with local SRS/stats
+                    // If server has vocab, we trust it as the source of truth for the list
+                    // But we keep local SRS progress for matching IDs
+                    const newDb = { ...prev, vocab: serverVocab };
+                    saveDB(newDb); // Update local cache
+                    return newDb;
+                });
+            }
+        };
+        syncVocab();
+    }, []);
 
     const changeView = (newView: ViewName) => {
         if (newView === view) return;
@@ -130,6 +149,10 @@ function App() {
 
             const newDb = { ...prev, vocab: updatedVocab };
             saveDB(newDb);
+            saveVocabToServer(updatedVocab).then(success => {
+                if (success) showToast("Đã lưu dữ liệu lên server!", "success");
+                else showToast("Lỗi khi lưu lên server!", "error");
+            });
             const lessonSummary = Array.from(affectedLessons).join(', ');
             showToast(`Đã nạp ${newItems.length} từ vào BÀI [${lessonSummary}] (Thêm: ${added}, Cập nhật: ${updated})`, 'success');
             return newDb;
@@ -152,12 +175,19 @@ function App() {
             return v.lesson === lessonId && v.type === studyType;
         });
 
-        // SHUFFLE LOGIC
-        if (db.config.writingMode === 'shuffle' && list.length > 0) {
-            return [...list].sort(() => Math.random() - 0.5);
-        }
         return list;
-    }, [db.vocab, db.favorites, lessonId, db.config.writingMode, srsQueue, studyType, mode]);
+    }, [db.vocab, db.favorites, lessonId, srsQueue, studyType, mode]);
+
+    // Memoize shuffled list to prevent re-shuffle on every DB update
+    // Only re-shuffle if the underlying list changes significantly (length) or lessonId changes
+    const shuffledVocab = useMemo(() => {
+        if (db.config.writingMode === 'shuffle' && activeVocab.length > 0) {
+            return [...activeVocab].sort(() => Math.random() - 0.5);
+        }
+        return activeVocab;
+    }, [activeVocab.length, lessonId, db.config.writingMode, mode]); // Reduced dependencies
+
+    const finalVocab = db.config.writingMode === 'shuffle' ? shuffledVocab : activeVocab;
 
     const historyKey = `${lessonId}-${mode}-${studyType}`;
     // If using queue (SRS or Reflex with queue), index is always 0 (head of queue)
@@ -190,7 +220,7 @@ function App() {
     };
 
     const handleResult = (rating: 1 | 2 | 3 | 4, hintUsed: boolean = false) => {
-        const v = activeVocab[currentIndex];
+        const v = finalVocab[currentIndex];
         if (!v) return;
 
         // If it's a review session, just move next without updating SRS
@@ -580,7 +610,7 @@ function App() {
                         }
                     }}
                     onCheckIn={handleCheckIn}
-                    onOpenFav={() => setShowFavModal(true)}
+                    onOpenFav={() => changeView('favorites-manager')}
                 />;
             case 'data-factory':
                 return <DataFactoryView 
@@ -601,22 +631,34 @@ function App() {
                         onOpenExport={() => setShowExportSelector(true)}
                     />
                 );
+            case 'favorites-manager':
+                return <FavoritesManagerView 
+                    db={db}
+                    onUpdateDb={setDb}
+                    onClose={handleBack}
+                    onJumpToStudy={(lesson, type) => {
+                        setLessonId(lesson);
+                        setStudyType(type);
+                        setMode('study');
+                        changeView('study');
+                    }}
+                />;
             case 'study':
-                if (activeVocab.length === 0) return <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-500 font-black uppercase p-6 text-center gap-4">
+                if (finalVocab.length === 0) return <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-500 font-black uppercase p-6 text-center gap-4">
                     <div>CHƯA CÓ DỮ LIỆU {studyType === 'vocab' ? 'TỪ VỰNG' : 'KANJI'}</div>
                     <button onClick={handleBack} className="px-6 py-2 bg-slate-800 rounded-lg text-white text-xs uppercase">Quay lại</button>
                 </div>;
-                if (currentIndex >= activeVocab.length) return renderCompletionScreen();
+                if (currentIndex >= finalVocab.length) return renderCompletionScreen();
                 return <StudyView 
-                    vocab={activeVocab[currentIndex]} 
+                    vocab={finalVocab[currentIndex]} 
                     index={currentIndex} 
-                    total={activeVocab.length} 
-                    isFavorite={db.favorites.includes(String(activeVocab[currentIndex].id))} 
+                    total={finalVocab.length} 
+                    isFavorite={db.favorites.includes(String(finalVocab[currentIndex].id))} 
                     kanjiSize={db.config.kanjiSize} 
                     onNext={handleStudyNext} 
                     onPrev={() => updateIndex(currentIndex - 1)} 
                     onToggleFav={() => {
-                        const v = activeVocab[currentIndex];
+                        const v = finalVocab[currentIndex];
                         setDb(prev => {
                             const newFavs = prev.favorites.includes(String(v.id)) 
                                 ? prev.favorites.filter(id => id !== String(v.id))
@@ -630,7 +672,7 @@ function App() {
                     onOpenRules={() => setShowRules(true)}
                     studyType={studyType}
                     onTypeChange={setStudyType}
-                    vocabList={activeVocab}
+                    vocabList={finalVocab}
                     onJump={updateIndex}
                     lessonId={lessonId || ''}
                 />;

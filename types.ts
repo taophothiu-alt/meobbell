@@ -73,10 +73,18 @@ export interface HistoryState {
     [key: string]: number;
 }
 
+export interface FavoriteGroup {
+    id: string;
+    name: string;
+    color: string; // Tailwind class or hex
+    itemIds: string[];
+}
+
 export interface AppDatabase {
     vocab: Vocab[];
     favorites: string[];
-    hiddenLessons: string[]; // New field
+    favoriteGroups: FavoriteGroup[]; // New field
+    hiddenLessons: string[];
     mistakes: string[];
     mistakeStreaks: Record<string, number>; 
     srs: Record<string, SRSStatus>; 
@@ -91,10 +99,10 @@ export interface AppDatabase {
         writing: HighScoreRecord[];
         [key: string]: HighScoreRecord[]; 
     };
-    cramSession?: CramSession; // New persistent session
+    cramSession?: CramSession;
 }
 
-export type ViewName = 'dashboard' | 'lesson-list' | 'data-factory' | 'study' | 'writing' | 'reflex' | 'reflex-selector' | 'blitz-game' | 'cram' | 'settings' | 'rule-explorer' | 'kanji-explorer' | 'kanji-network' | 'typing';
+export type ViewName = 'dashboard' | 'lesson-list' | 'data-factory' | 'study' | 'writing' | 'reflex' | 'reflex-selector' | 'blitz-game' | 'cram' | 'settings' | 'rule-explorer' | 'kanji-explorer' | 'kanji-network' | 'typing' | 'favorites-manager' | 'master-data-manager';
 export type ModeName = 'study' | 'writing' | 'reflex' | 'blitz' | 'cram' | 'typing';
 
 export const STORAGE_KEY = 'kotoba_master_pro_v13';

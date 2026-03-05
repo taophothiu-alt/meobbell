@@ -13,15 +13,16 @@ const DEFAULT_STATS: UserStats = {
 const DEFAULT_DB: AppDatabase = {
     vocab: [],
     favorites: [],
-    hiddenLessons: [], // New field
+    favoriteGroups: [], // New field
+    hiddenLessons: [], 
     mistakes: [],
     mistakeStreaks: {}, 
     srs: {},
     stats: DEFAULT_STATS,
     config: { 
-        kanjiSize: 90, // Reduced by ~30% from 130
+        kanjiSize: 90, 
         autoPlayAudio: true,
-        soundEnabled: true, // Default true
+        soundEnabled: true, 
         writingTimer: 0, 
         writingMode: 'sequential'
     },
@@ -50,6 +51,33 @@ export const getRankByCount = (count: number) => {
     return RANKS.find(r => count >= r.threshold) || RANKS[RANKS.length - 1];
 };
 
+export const fetchVocabFromServer = async (): Promise<Vocab[]> => {
+    try {
+        const response = await fetch('/api/vocab');
+        if (!response.ok) throw new Error('Failed to fetch vocab');
+        return await response.json();
+    } catch (error) {
+        console.error('Error fetching vocab:', error);
+        return [];
+    }
+};
+
+export const saveVocabToServer = async (vocab: Vocab[]): Promise<boolean> => {
+    try {
+        const response = await fetch('/api/vocab', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(vocab),
+        });
+        return response.ok;
+    } catch (error) {
+        console.error('Error saving vocab:', error);
+        return false;
+    }
+};
+
 export const loadDB = (): AppDatabase => {
     try {
         const stored = localStorage.getItem(STORAGE_KEY);
@@ -71,7 +99,8 @@ export const loadDB = (): AppDatabase => {
                 ...DEFAULT_DB, 
                 ...parsed, 
                 vocab: migratedVocab,
-                hiddenLessons: parsed.hiddenLessons || [], // Ensure field exists
+                favoriteGroups: parsed.favoriteGroups || [], // Ensure field exists
+                hiddenLessons: parsed.hiddenLessons || [], 
                 stats: { ...DEFAULT_STATS, ...parsed.stats },
                 config: { ...DEFAULT_DB.config, ...parsed.config },
                 highScores: { ...DEFAULT_DB.highScores, ...(parsed.highScores || {}) }
