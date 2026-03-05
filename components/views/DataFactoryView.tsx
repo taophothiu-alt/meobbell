@@ -1,77 +1,44 @@
 
 import React, { useState, useEffect } from 'react';
 import { parseVocabString, getNextImportLessonId, saveDB } from '../../services/storageService';
-import { fetchMasterData, saveMasterData } from '../../services/masterDataService';
 import { Vocab, AppDatabase } from '../../types';
 
+// Force rebuild: Ensure no stale imports exist
 interface DataFactoryProps {
     db: AppDatabase;
     onImport: (newVocab: Vocab[]) => void;
     onClose: () => void;
     onNotify: (msg: string, type: 'success' | 'error' | 'info') => void;
     onUpdateDb: (newDb: AppDatabase) => void;
-    onOpenMasterData: () => void;
 }
 
-export const DataFactoryView: React.FC<DataFactoryProps> = ({ db, onImport, onClose, onNotify, onUpdateDb, onOpenMasterData }) => {
+export const DataFactoryView: React.FC<DataFactoryProps> = ({ db, onImport, onClose, onNotify, onUpdateDb }) => {
     const [lessonNum, setLessonNum] = useState<string>("1");
     const [rawInput, setRawInput] = useState<string>("");
     const [autoDetectLesson, setAutoDetectLesson] = useState(false);
     const [showHideModal, setShowHideModal] = useState(false);
     const [selectedLessons, setSelectedLessons] = useState<Set<string>>(new Set(db.hiddenLessons || []));
-    const [isImporting, setIsImporting] = useState(false);
 
     // Auto-calculate next lesson ID on mount
     useEffect(() => {
         setLessonNum(getNextImportLessonId(db));
     }, [db]);
 
-    const handleImport = async () => {
+    const handleImport = () => {
         if (!rawInput.trim()) {
             onNotify("Vui lòng dán dữ liệu vào ô trống", 'error');
             return;
         }
         
-        setIsImporting(true);
         const targetLesson = autoDetectLesson ? "AUTO" : lessonNum;
         const vocab = parseVocabString(rawInput, targetLesson);
         
         if (vocab.length > 0) {
-            try {
-                // 1. Save to Local DB (Standard behavior)
-                onImport(vocab);
-
-                // 2. Save to Server Master Data (New requirement)
-                const currentMaster = await fetchMasterData();
-                
-                // Merge logic: Append new items, avoid duplicates by ID if possible
-                // Since parseVocabString might generate IDs, we should be careful.
-                // But usually bulk import implies new data.
-                // Let's filter out items that already exist in master data by ID
-                const existingIds = new Set(currentMaster.map(v => String(v.id)));
-                const newItems = vocab.filter(v => !existingIds.has(String(v.id)));
-                
-                if (newItems.length > 0) {
-                    const updatedMaster = [...currentMaster, ...newItems];
-                    const success = await saveMasterData(updatedMaster);
-                    if (success) {
-                        onNotify(`Đã nạp ${vocab.length} từ và lưu vào Server thành công!`, 'success');
-                    } else {
-                        onNotify(`Đã nạp vào máy nhưng lỗi lưu Server!`, 'error');
-                    }
-                } else {
-                    onNotify(`Đã nạp ${vocab.length} từ (trùng lặp trên Server nên không lưu thêm)`, 'info');
-                }
-
-                onClose();
-            } catch (e) {
-                console.error(e);
-                onNotify("Lỗi khi xử lý dữ liệu", 'error');
-            }
+            onImport(vocab);
+            onClose();
         } else {
             onNotify("Không tìm thấy dữ liệu hợp lệ. Kiểm tra định dạng JSON.", 'error');
         }
-        setIsImporting(false);
     };
 
     const toggleLessonSelection = (lid: string) => {
@@ -95,45 +62,18 @@ export const DataFactoryView: React.FC<DataFactoryProps> = ({ db, onImport, onCl
 
     const allLessons = Array.from(new Set(db.vocab.map(v => v.lesson))).sort((a, b) => parseInt(a) - parseInt(b));
 
-    const handleExportForCode = () => {
-        const json = JSON.stringify(db.vocab, null, 4);
-        // Copy to clipboard
-        navigator.clipboard.writeText(json).then(() => {
-            onNotify("Đã sao chép dữ liệu! Dán vào file src/data/staticData.ts", 'success');
-        }).catch(() => {
-            onNotify("Lỗi sao chép", 'error');
-        });
-    };
-
     return (
         <section className="absolute inset-0 p-8 overflow-y-auto custom-scrollbar animate-slide-up bg-black/80 backdrop-blur-md">
             <div className="max-w-4xl mx-auto space-y-6">
                 <div className="flex justify-between items-center border-l-4 border-emerald-500 pl-4">
                     <h2 className="text-2xl font-black italic uppercase text-white tracking-widest">Xưởng dữ liệu</h2>
-                    <div className="flex gap-2">
-                        <button 
-                            onClick={onOpenMasterData}
-                            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold uppercase tracking-wider shadow-lg shadow-emerald-500/20 flex items-center gap-2 animate-pulse"
-                        >
-                            <i className="fas fa-database"></i> Quản lý Dữ liệu Gốc (Server)
-                        </button>
-                        <button 
-                            onClick={handleExportForCode}
-                            className="px-4 py-2 bg-indigo-900/50 hover:bg-indigo-800 text-indigo-300 rounded-lg text-xs font-bold uppercase tracking-wider border border-indigo-500/30 transition flex items-center gap-2"
-                            title="Xuất dữ liệu để dán vào mã nguồn (staticData.ts)"
-                        >
-                            <i className="fas fa-code"></i> Xuất mã nguồn
-                        </button>
-                        <button 
-                            onClick={() => setShowHideModal(true)}
-                            className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-bold uppercase tracking-wider border border-slate-600 transition flex items-center gap-2"
-                        >
-                            <i className="fas fa-eye-slash"></i> Quản lý hiển thị
-                        </button>
-                    </div>
+                    <button 
+                        onClick={() => setShowHideModal(true)}
+                        className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-bold uppercase tracking-wider border border-slate-600 transition flex items-center gap-2"
+                    >
+                        <i className="fas fa-eye-slash"></i> Quản lý hiển thị
+                    </button>
                 </div>
-                
-                {/* ... (rest of the JSX) */}
                 
                 <div className="rounded-[1.25rem] border-[2.5px] border-emerald-500/30 p-8 space-y-6 bg-slate-900/50">
                     <div className="space-y-3">
