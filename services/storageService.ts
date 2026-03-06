@@ -69,6 +69,22 @@ export const loadDB = (): AppDatabase => {
                 kun: v.kun || "-"
             }));
 
+            // MERGE INITIAL DATA IF MISSING
+            // Create a map of existing IDs for fast lookup
+            const existingIds = new Set(migratedVocab.map((v: any) => String(v.id)));
+            let addedCount = 0;
+            
+            initialVocabData.forEach(initItem => {
+                if (!existingIds.has(String(initItem.id))) {
+                    migratedVocab.push(initItem);
+                    addedCount++;
+                }
+            });
+
+            if (addedCount > 0) {
+                console.log(`Merged ${addedCount} initial vocab items into database.`);
+            }
+
             return { 
                 ...DEFAULT_DB, 
                 ...parsed, 
