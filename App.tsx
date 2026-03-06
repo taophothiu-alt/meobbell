@@ -15,7 +15,7 @@ import { KanjiExplorerView } from './components/views/KanjiExplorerView';
 import { TypingModeView } from './components/views/TypingModeView';
 import { SettingsView } from './components/views/SettingsView';
 import { FavoritesManagerView } from './components/views/FavoritesManagerView';
-import { loadDB, saveDB, updateStats, calculateSRS, getDueVocab, exportVocabData, resetLessonStats, fetchVocabFromServer, saveVocabToServer } from './services/storageService';
+import { loadDB, saveDB, updateStats, calculateSRS, getDueVocab, exportVocabData, resetLessonStats } from './services/storageService';
 import { AppDatabase, ViewName, ModeName, Vocab } from './types';
 
 interface ConfirmModalProps {
@@ -31,24 +31,6 @@ function App() {
     const [db, setDb] = useState<AppDatabase>(loadDB());
     const [view, setView] = useState<ViewName>('dashboard');
     const [viewHistory, setViewHistory] = useState<ViewName[]>([]);
-
-    // Fetch vocab from server on mount - REMOVED to rely on static file
-    // useEffect(() => {
-    //     const syncVocab = async () => {
-    //         const serverVocab = await fetchVocabFromServer();
-    //         if (serverVocab.length > 0) {
-    //             setDb(prev => {
-    //                 // Merge server vocab with local SRS/stats
-    //                 // If server has vocab, we trust it as the source of truth for the list
-    //                 // But we keep local SRS progress for matching IDs
-    //                 const newDb = { ...prev, vocab: serverVocab };
-    //                 saveDB(newDb); // Update local cache
-    //                 return newDb;
-    //             });
-    //         }
-    //     };
-    //     syncVocab();
-    // }, []);
 
     const changeView = (newView: ViewName) => {
         if (newView === view) return;
@@ -149,10 +131,6 @@ function App() {
 
             const newDb = { ...prev, vocab: updatedVocab };
             saveDB(newDb);
-            saveVocabToServer(updatedVocab).then(success => {
-                if (success) showToast("Đã lưu dữ liệu lên server!", "success");
-                else showToast("Lỗi khi lưu lên server!", "error");
-            });
             const lessonSummary = Array.from(affectedLessons).join(', ');
             showToast(`Đã nạp ${newItems.length} từ vào BÀI [${lessonSummary}] (Thêm: ${added}, Cập nhật: ${updated})`, 'success');
             return newDb;
@@ -621,12 +599,7 @@ function App() {
                     onUpdateDb={(newDb) => setDb(newDb)}
                 />;
             case 'lesson-list':
-                return <LessonListView 
-                    db={db} 
-                    onSelect={(id) => { setLessonId(id); changeView('reflex-selector'); }} 
-                    onUpdateDb={(newDb) => setDb(newDb)}
-                    onNotify={showToast}
-                />;
+                return <LessonListView db={db} onSelect={(id) => { setLessonId(id); changeView('reflex-selector'); }} />;
             case 'settings':
                 return (
                     <SettingsView 
