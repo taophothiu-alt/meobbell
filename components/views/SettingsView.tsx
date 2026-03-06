@@ -28,6 +28,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ db, onClose, onUpdat
     const [autoDetectLesson, setAutoDetectLesson] = useState(false);
     const [showPasswordModal, setShowPasswordModal] = useState(false);
     const [passwordInput, setPasswordInput] = useState("");
+    const [pendingTab, setPendingTab] = useState<'general' | 'data' | null>(null);
 
     useEffect(() => {
         const loadVoices = () => {
@@ -91,22 +92,33 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ db, onClose, onUpdat
         }
     };
 
-    const handleExportClick = () => {
-        setShowPasswordModal(true);
-        setPasswordInput("");
+    const handleTabClick = (tab: 'general' | 'data') => {
+        if (tab === 'data') {
+            setPendingTab('data');
+            setShowPasswordModal(true);
+            setPasswordInput("");
+        } else {
+            setActiveTab(tab);
+        }
     };
 
     const verifyPassword = () => {
         if (passwordInput === "ph0n6123") {
             setShowPasswordModal(false);
-            onOpenExport();
+            if (pendingTab === 'data') {
+                setActiveTab('data');
+                setPendingTab(null);
+            } else {
+                // Fallback for direct export if needed, but now we protect the tab
+                onOpenExport(); 
+            }
         } else {
             onNotify("Mật khẩu không đúng!", 'error');
         }
     };
 
     return (
-        <div className="absolute inset-0 bg-black/80 backdrop-blur-xl z-50 flex items-center justify-center p-6 animate-slide-up overflow-y-auto">
+        <div className="absolute inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-6 animate-slide-up overflow-y-auto">
             <div className="bg-slate-900 border-2 border-slate-700 rounded-3xl p-6 md:p-8 max-w-2xl w-full shadow-2xl space-y-6 relative my-auto max-h-[90vh] flex flex-col">
                 <div className="flex justify-between items-center border-b border-slate-700 pb-4 shrink-0">
                     <h2 className="text-xl font-black text-white uppercase tracking-widest">Cài đặt</h2>
@@ -116,13 +128,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ db, onClose, onUpdat
                 {/* TABS */}
                 <div className="flex gap-2 shrink-0">
                     <button 
-                        onClick={() => setActiveTab('general')}
+                        onClick={() => handleTabClick('general')}
                         className={`flex-1 py-3 rounded-xl font-black uppercase text-xs tracking-widest transition ${activeTab === 'general' ? 'bg-indigo-600 text-white shadow-lg' : 'bg-slate-800 text-slate-500 hover:text-white'}`}
                     >
                         <i className="fas fa-sliders-h mr-2"></i> Chung
                     </button>
                     <button 
-                        onClick={() => setActiveTab('data')}
+                        onClick={() => handleTabClick('data')}
                         className={`flex-1 py-3 rounded-xl font-black uppercase text-xs tracking-widest transition ${activeTab === 'data' ? 'bg-emerald-600 text-white shadow-lg' : 'bg-slate-800 text-slate-500 hover:text-white'}`}
                     >
                         <i className="fas fa-database mr-2"></i> Dữ liệu
@@ -262,10 +274,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ db, onClose, onUpdat
                             <div className="space-y-4 pt-6 border-t border-slate-800">
                                 <div className="text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-800 pb-2">Xuất dữ liệu</div>
                                 <button 
-                                    onClick={handleExportClick}
+                                    onClick={onOpenExport}
                                     className="w-full py-3 bg-sky-900/50 hover:bg-sky-800 text-sky-400 rounded-xl font-black uppercase tracking-widest text-xs border border-sky-600/50 transition flex items-center justify-center gap-2"
                                 >
-                                    <i className="fas fa-file-export"></i> Xuất dữ liệu (Cần mật khẩu)
+                                    <i className="fas fa-file-export"></i> Xuất dữ liệu
                                 </button>
                             </div>
                         </div>

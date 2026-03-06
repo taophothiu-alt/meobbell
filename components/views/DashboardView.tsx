@@ -26,7 +26,7 @@ export const DashboardView: React.FC<DashboardProps> = ({ db, onChangeView, onSt
             whileTap={onClick ? { scale: 0.98 } : {}}
             onClick={onClick}
             className={`
-                relative bg-slate-900/80 backdrop-blur-2xl rounded-2xl border-2 ${colorClass} 
+                relative bg-slate-900/80 backdrop-blur-md rounded-2xl border-2 ${colorClass} 
                 overflow-hidden transition-all duration-300 group
                 ${onClick ? 'cursor-pointer hover:bg-white/5' : ''}
                 ${className}
@@ -80,7 +80,7 @@ export const DashboardView: React.FC<DashboardProps> = ({ db, onChangeView, onSt
                 <div className="flex flex-col sm:flex-row gap-4 shrink-0">
                     <BentoBlock 
                         onClick={() => dueCount > 0 ? onStartLesson('SRS') : onChangeView('lesson-list')}
-                        className={`flex-[2] relative flex flex-col justify-center items-center px-8 py-6 transition-all duration-500 overflow-hidden shrink-0 ${dueCount > 0 ? 'bg-slate-900/40 backdrop-blur-md' : 'bg-slate-900/40 backdrop-blur-md'}`}
+                        className={`flex-[2] relative flex flex-col justify-center items-center px-8 py-6 transition-all duration-500 overflow-hidden shrink-0 ${dueCount > 0 ? 'bg-slate-900/40 backdrop-blur-sm' : 'bg-slate-900/40 backdrop-blur-sm'}`}
                         colorClass={dueCount > 0 ? 'border-red-500 shadow-[0_0_30px_rgba(244,63,94,0.3)]' : 'border-indigo-500 shadow-[0_0_30px_rgba(99,102,241,0.3)]'}
                     >
                         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-20 mix-blend-overlay"></div>
@@ -99,10 +99,10 @@ export const DashboardView: React.FC<DashboardProps> = ({ db, onChangeView, onSt
                         </div>
                     </BentoBlock>
 
-                    {lastLessonId && (
+                    {lastLessonId && !(db.hiddenLessons || []).includes(lastLessonId) && (
                         <BentoBlock 
                             onClick={() => onStartLesson(lastLessonId)}
-                            className="flex-1 bg-slate-900/40 backdrop-blur-md flex flex-col items-center justify-center group py-4 shrink-0 relative overflow-hidden"
+                            className="flex-1 bg-slate-900/40 backdrop-blur-sm flex flex-col items-center justify-center group py-4 shrink-0 relative overflow-hidden"
                             colorClass="border-emerald-500 shadow-[0_0_30px_rgba(16,185,129,0.3)]"
                         >
                             <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-emerald-500/10 via-transparent to-transparent"></div>
@@ -114,19 +114,19 @@ export const DashboardView: React.FC<DashboardProps> = ({ db, onChangeView, onSt
                 </div>
 
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4 shrink-0">
-                    <BentoBlock onClick={() => onChangeView('lesson-list')} colorClass="border-cyan-400 hover:border-white shadow-[0_0_20px_rgba(34,211,238,0.3)]" className="aspect-[2/1] md:aspect-square flex flex-col items-center justify-center gap-2 group p-4 bg-slate-900/40 backdrop-blur-md">
+                    <BentoBlock onClick={() => onChangeView('lesson-list')} colorClass="border-cyan-400 hover:border-white shadow-[0_0_20px_rgba(34,211,238,0.3)]" className="aspect-[2/1] md:aspect-square flex flex-col items-center justify-center gap-2 group p-4 bg-slate-900/40 backdrop-blur-sm">
                         <div className="w-12 h-12 rounded-full bg-cyan-500/10 flex items-center justify-center mb-1 group-hover:bg-cyan-500/30 transition-all shadow-[0_0_15px_rgba(34,211,238,0.2)]">
                             <i className="fas fa-map-signs text-2xl md:text-3xl text-cyan-400 group-hover:scale-110 transition"></i>
                         </div>
                         <span className="text-[10px] font-black text-white uppercase tracking-widest text-center">Lộ trình</span>
                     </BentoBlock>
-                    <BentoBlock onClick={() => onChangeView('kanji-explorer')} colorClass="border-amber-500 hover:border-white shadow-[0_0_20px_rgba(245,158,11,0.3)]" className="aspect-[2/1] md:aspect-square flex flex-col items-center justify-center gap-2 group p-4 bg-slate-900/40 backdrop-blur-md">
+                    <BentoBlock onClick={() => onChangeView('kanji-explorer')} colorClass="border-amber-500 hover:border-white shadow-[0_0_20px_rgba(245,158,11,0.3)]" className="aspect-[2/1] md:aspect-square flex flex-col items-center justify-center gap-2 group p-4 bg-slate-900/40 backdrop-blur-sm">
                         <div className="w-12 h-12 rounded-full bg-amber-500/10 flex items-center justify-center mb-1 group-hover:bg-amber-500/30 transition-all shadow-[0_0_15px_rgba(245,158,11,0.2)]">
                             <i className="fas fa-th text-2xl md:text-3xl text-amber-500 group-hover:scale-110 transition"></i>
                         </div>
                         <span className="text-[10px] font-black text-white uppercase tracking-widest text-center">Kho Kanji</span>
                     </BentoBlock>
-                    <BentoBlock onClick={onOpenFav} colorClass="border-pink-500 hover:border-white shadow-[0_0_20px_rgba(236,72,153,0.3)]" className="aspect-[2/1] md:aspect-square flex flex-col items-center justify-center gap-2 group p-4 bg-slate-900/40 backdrop-blur-md">
+                    <BentoBlock onClick={onOpenFav} colorClass="border-pink-500 hover:border-white shadow-[0_0_20px_rgba(236,72,153,0.3)]" className="aspect-[2/1] md:aspect-square flex flex-col items-center justify-center gap-2 group p-4 bg-slate-900/40 backdrop-blur-sm">
                         <div className="w-12 h-12 rounded-full bg-pink-500/10 flex items-center justify-center mb-1 group-hover:bg-pink-500/30 transition-all shadow-[0_0_15px_rgba(236,72,153,0.2)]">
                             <i className="fas fa-heart text-2xl md:text-3xl text-pink-500 group-hover:scale-110 transition"></i>
                         </div>

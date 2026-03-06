@@ -12,15 +12,14 @@ interface LessonListProps {
 
 export const LessonListView: React.FC<LessonListProps> = ({ db, onSelect, onUpdateDb }) => {
     const hiddenSet = new Set(db.hiddenLessons || []);
-    // Show ALL lessons for the modal, but filter for the grid
-    const allLessons = (Array.from(new Set(db.vocab.map(v => v.lesson))) as string[])
+    // Show ALL lessons, sorted
+    const lessons = (Array.from(new Set(db.vocab.map(v => v.lesson))) as string[])
         .sort((a, b) => parseInt(a) - parseInt(b));
-    
-    const visibleLessons = allLessons.filter(lid => !hiddenSet.has(lid));
 
-    const [showManageModal, setShowManageModal] = React.useState(false);
+    const [showHiddenManager, setShowHiddenManager] = React.useState(false);
 
-    const toggleVisibility = (lessonId: string) => {
+    const toggleVisibility = (e: React.MouseEvent, lessonId: string) => {
+        e.stopPropagation(); // Prevent selecting the lesson
         const newHidden = new Set(hiddenSet);
         if (newHidden.has(lessonId)) {
             newHidden.delete(lessonId);
@@ -59,35 +58,37 @@ export const LessonListView: React.FC<LessonListProps> = ({ db, onSelect, onUpda
                         <i className="fas fa-map-marked-alt text-indigo-500"></i>
                         LỘ TRÌNH HỌC TẬP
                     </h2>
-                    <div className="flex gap-3">
+                    <div className="flex gap-2">
                         <button 
-                            onClick={() => setShowManageModal(true)}
-                            className="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-[10px] font-black rounded-lg uppercase tracking-widest text-slate-300 border border-slate-600 transition flex items-center gap-2"
+                            onClick={() => setShowHiddenManager(true)}
+                            className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs font-bold rounded-lg uppercase tracking-wider text-slate-300 border border-slate-600 transition flex items-center gap-2"
                         >
-                            <i className="fas fa-eye-slash"></i> Ẩn/Hiện Bài
+                            <i className="fas fa-eye-slash"></i> Quản lý ẩn/hiện
                         </button>
-                        <span className="px-3 py-1 bg-indigo-900/50 text-[9px] font-black rounded-lg uppercase tracking-widest text-indigo-300 border border-indigo-500/30">
-                            {visibleLessons.length} BÀI HỌC
+                        <span className="px-3 py-1 bg-indigo-900/50 text-[9px] font-black rounded-lg uppercase tracking-widest text-indigo-300 border border-indigo-500/30 flex items-center">
+                            {lessons.length} BÀI HỌC
                         </span>
                     </div>
                 </div>
                 
-                {visibleLessons.length === 0 ? (
+                {lessons.length === 0 ? (
                     <div className="text-center py-24 border-2 border-dashed border-slate-800 rounded-3xl bg-slate-900/30">
-                        <p className="font-black text-xs text-slate-500 uppercase tracking-widest">Chưa có dữ liệu bài học hoặc tất cả đã bị ẩn.</p>
+                        <p className="font-black text-xs text-slate-500 uppercase tracking-widest">Chưa có dữ liệu bài học.</p>
                     </div>
                 ) : (
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
-                        {visibleLessons.map(lessonId => {
+                        {lessons.map(lessonId => {
                             // Filter only 'vocab' type for counting total words
                             const lessonWords = db.vocab.filter(v => v.lesson === lessonId && v.type === 'vocab');
                             const masteredCount = lessonWords.filter(v => db.srs[v.id]?.status === 'review').length;
                             const progress = lessonWords.length > 0 ? Math.round((masteredCount / lessonWords.length) * 100) : 0;
                             const isLastPlayed = db.config.lastLessonId === lessonId;
-                            const customName = db.lessonNames?.[lessonId];
+                            const isHidden = hiddenSet.has(lessonId);
 
                             // Dynamic Neon Colors based on ID
                             const colorClass = NEON_COLORS[parseInt(lessonId) % NEON_COLORS.length];
+
+                            if (isHidden) return null; // Hide completely from grid if hidden
 
                             return (
                                 <Block 
@@ -100,11 +101,6 @@ export const LessonListView: React.FC<LessonListProps> = ({ db, onSelect, onUpda
                                     <div className="text-3xl md:text-4xl font-black text-white italic tracking-tighter group-hover:scale-110 transition-transform duration-300 drop-shadow-md">
                                         {lessonId}
                                     </div>
-                                    {customName && (
-                                        <div className="text-[10px] font-bold text-indigo-300 uppercase truncate max-w-full px-1">
-                                            {customName}
-                                        </div>
-                                    )}
                                     <div className="text-[8px] font-black text-white/70 uppercase tracking-widest mt-1 group-hover:text-white transition-colors">
                                         {lessonWords.length} TỪ
                                     </div>
@@ -124,52 +120,36 @@ export const LessonListView: React.FC<LessonListProps> = ({ db, onSelect, onUpda
                 )}
             </div>
 
-            {/* MANAGE VISIBILITY MODAL */}
-            {showManageModal && (
-                <div className="absolute inset-0 z-50 bg-black/90 backdrop-blur-xl flex items-center justify-center p-6 animate-slide-up" onClick={() => setShowManageModal(false)}>
+            {/* Hidden Manager Modal */}
+            {showHiddenManager && (
+                <div className="absolute inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-6 animate-slide-up" onClick={() => setShowHiddenManager(false)}>
                     <div className="max-w-2xl w-full bg-slate-900 border-2 border-slate-700 rounded-3xl p-6 shadow-2xl relative flex flex-col max-h-[80vh]" onClick={e => e.stopPropagation()}>
-                        <div className="flex justify-between items-center border-b border-slate-700 pb-4 mb-4 shrink-0">
-                            <h2 className="text-lg font-black text-white uppercase tracking-widest">Quản lý hiển thị bài học</h2>
-                            <button onClick={() => setShowManageModal(false)} className="text-slate-500 hover:text-white"><i className="fas fa-times"></i></button>
+                        <div className="flex justify-between items-center border-b border-slate-700 pb-4 mb-4">
+                            <h2 className="text-lg font-black text-white uppercase tracking-widest">Quản lý Ẩn/Hiện Bài học</h2>
+                            <button onClick={() => setShowHiddenManager(false)} className="text-slate-500 hover:text-white"><i className="fas fa-times"></i></button>
                         </div>
-                        
-                        <div className="text-xs text-slate-400 mb-4 px-1">
-                            Chọn các bài học bạn muốn <span className="text-rose-400 font-bold">ẨN</span> khỏi lộ trình.
-                        </div>
-
-                        <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-3 overflow-y-auto custom-scrollbar p-2 flex-1 min-h-0">
-                            {allLessons.map(lid => {
-                                const isHidden = hiddenSet.has(lid);
+                        <div className="flex-1 overflow-y-auto custom-scrollbar grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3 p-2">
+                            {lessons.map(lessonId => {
+                                const isHidden = hiddenSet.has(lessonId);
                                 return (
-                                    <button
-                                        key={lid}
-                                        onClick={() => toggleVisibility(lid)}
-                                        className={`
-                                            aspect-square rounded-xl flex flex-col items-center justify-center border-2 transition-all relative overflow-hidden group
-                                            ${isHidden 
-                                                ? 'bg-rose-900/20 border-rose-500 text-rose-500' 
-                                                : 'bg-slate-800 border-slate-700 text-slate-300 hover:border-emerald-500 hover:text-white'
-                                            }
-                                        `}
+                                    <button 
+                                        key={lessonId}
+                                        onClick={(e) => toggleVisibility(e, lessonId)}
+                                        className={`aspect-square rounded-xl border-2 flex flex-col items-center justify-center transition relative ${isHidden ? 'bg-slate-950 border-slate-800 text-slate-600' : 'bg-indigo-900/20 border-indigo-500 text-white shadow-[0_0_10px_rgba(99,102,241,0.2)]'}`}
                                     >
-                                        <div className="text-xl font-black italic">{lid}</div>
+                                        <div className="text-2xl font-black italic">{lessonId}</div>
+                                        <div className="text-[9px] font-bold uppercase mt-1">{isHidden ? 'Đang Ẩn' : 'Hiển thị'}</div>
                                         {isHidden && (
-                                            <div className="absolute inset-0 bg-rose-500/10 flex items-center justify-center">
-                                                <i className="fas fa-eye-slash text-rose-500 text-lg"></i>
+                                            <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-xl">
+                                                <i className="fas fa-eye-slash text-slate-500 text-xl"></i>
                                             </div>
                                         )}
                                     </button>
                                 );
                             })}
                         </div>
-
-                        <div className="mt-6 pt-4 border-t border-slate-700 flex justify-end shrink-0">
-                            <button 
-                                onClick={() => setShowManageModal(false)}
-                                className="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold uppercase text-xs shadow-lg shadow-emerald-500/20"
-                            >
-                                Đóng
-                            </button>
+                        <div className="mt-4 pt-4 border-t border-slate-700 text-center">
+                            <p className="text-[10px] text-slate-500 italic">Chọn bài học để ẩn hoặc hiện. Bài bị ẩn sẽ không xuất hiện trong lộ trình và ôn tập.</p>
                         </div>
                     </div>
                 </div>

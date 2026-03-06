@@ -37,8 +37,9 @@ export const FavoritesManagerView: React.FC<FavoritesManagerViewProps> = ({ db, 
 
     // Derived Data
     const allFavorites = useMemo(() => {
-        return db.vocab.filter(v => db.favorites.includes(String(v.id)));
-    }, [db.vocab, db.favorites]);
+        const hiddenSet = new Set(db.hiddenLessons || []);
+        return db.vocab.filter(v => db.favorites.includes(String(v.id)) && !hiddenSet.has(v.lesson));
+    }, [db.vocab, db.favorites, db.hiddenLessons]);
 
     const lessons = useMemo(() => {
         const set = new Set(allFavorites.map(v => v.lesson));

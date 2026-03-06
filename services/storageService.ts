@@ -16,7 +16,6 @@ const DEFAULT_DB: AppDatabase = {
     favorites: [],
     favoriteGroups: [], // New field
     hiddenLessons: [], 
-    lessonNames: {}, // New field
     mistakes: [],
     mistakeStreaks: {}, 
     srs: {},
@@ -92,7 +91,6 @@ export const loadDB = (): AppDatabase => {
                 vocab: migratedVocab,
                 favoriteGroups: parsed.favoriteGroups || [], // Ensure field exists
                 hiddenLessons: parsed.hiddenLessons || [], 
-                lessonNames: parsed.lessonNames || {}, // Ensure field exists
                 stats: { ...DEFAULT_STATS, ...parsed.stats },
                 config: { ...DEFAULT_DB.config, ...parsed.config },
                 highScores: { ...DEFAULT_DB.highScores, ...(parsed.highScores || {}) }
@@ -109,9 +107,10 @@ export const saveDB = (db: AppDatabase) => {
 
 export const exportVocabData = (db: AppDatabase, lessonId?: string) => {
     try {
+        const hiddenSet = new Set(db.hiddenLessons || []);
         const dataToExport = lessonId 
             ? db.vocab.filter(v => v.lesson === lessonId)
-            : db.vocab;
+            : db.vocab.filter(v => !hiddenSet.has(v.lesson)); // Filter hidden lessons
 
         if (dataToExport.length === 0) {
             alert("Không có dữ liệu để xuất!");
@@ -166,6 +165,8 @@ export const calculateSRS = (current: SRSStatus | undefined, rating: 1 | 2 | 3 |
                 status.status = 'review';
                 status.mustReviewConsecutiveCorrect = 0;
                 status.interval = effectiveRating === 3 ? 1.5 : 3;
+                // Cap at 21 days (though unlikely here)
+                if (status.interval > 21) status.interval = 21;
                 status.nextReview = now + (status.interval * ONE_DAY);
             } else {
                 status.nextReview = now + (10 * ONE_MINUTE);
@@ -198,17 +199,12 @@ export const calculateSRS = (current: SRSStatus | undefined, rating: 1 | 2 | 3 |
         // Hard (2)
         if (effectiveRating === 2) {
             status.status = 'learning';
-            // Keep stepIndex same or reset? Usually Hard doesn't advance.
-            // Description: "Vẫn ở Learning", "Gặp lại sau 5 phút".
             status.nextReview = now + (5 * ONE_MINUTE);
             return status;
         }
 
         // Good (3)
         if (effectiveRating === 3) {
-            // "Nếu vượt qua 2 lần Good -> Chuyển sang Review (1 ngày)"
-            // Step 0 -> Step 1 (10 min)
-            // Step 1 -> Review (1 day)
             if (status.stepIndex >= 1) {
                 status.status = 'review';
                 status.interval = 1; // 1 day
@@ -252,33 +248,28 @@ export const calculateSRS = (current: SRSStatus | undefined, rating: 1 | 2 | 3 |
 
         // Hard (2)
         if (effectiveRating === 2) {
-            // I_new = I_old * 1.2
-            // EF_new = EF_old - 0.15
             status.interval = oldInterval * 1.2 * fuzz;
             status.easeFactor = Math.max(1.3, oldEF - 0.15);
-            status.nextReview = now + (status.interval * ONE_DAY);
-            return status;
         }
 
         // Good (3)
         if (effectiveRating === 3) {
-            // I_new = I_old * EF_old
-            // EF unchanged
             status.interval = oldInterval * oldEF * fuzz;
-            // EF stays same
-            status.nextReview = now + (status.interval * ONE_DAY);
-            return status;
         }
 
         // Easy (4)
         if (effectiveRating === 4) {
-            // I_new = I_old * EF_old * 1.3
-            // EF_new = EF_old + 0.15
             status.interval = oldInterval * oldEF * 1.3 * fuzz;
-            status.easeFactor = Math.max(1.3, oldEF + 0.15); // No upper limit specified, but usually capped at 2.5 or higher? User didn't specify cap.
-            status.nextReview = now + (status.interval * ONE_DAY);
-            return status;
+            status.easeFactor = Math.max(1.3, oldEF + 0.15);
         }
+
+        // --- GLOBAL CAP AT 21 DAYS ---
+        if (status.interval > 21) {
+            status.interval = 21;
+        }
+
+        status.nextReview = now + (status.interval * ONE_DAY);
+        return status;
     }
 
     return status;
@@ -434,13 +425,15 @@ export const parseVocabString = (raw: string, lesson: string): Vocab[] => {
 };
 
 export const getRelatedVocab = (db: AppDatabase, kanjiChar: string): Vocab[] => {
-    // Only return 'vocab' type related words, not isolated kanji entries
-    return db.vocab.filter(v => v.type === 'vocab' && v.kj && v.kj.includes(kanjiChar));
+    const hiddenSet = new Set(db.hiddenLessons || []);
+    // Only return 'vocab' type related words, not isolated kanji entries, and exclude hidden lessons
+    return db.vocab.filter(v => v.type === 'vocab' && v.kj && v.kj.includes(kanjiChar) && !hiddenSet.has(v.lesson));
 };
 
 export const getPhoneticFamily = (db: AppDatabase, targetHV: string): Vocab[] => {
-    // Return other 'kanji' entries with similar HV
-    return db.vocab.filter(v => v.type === 'kanji' && v.hv === targetHV);
+    const hiddenSet = new Set(db.hiddenLessons || []);
+    // Return other 'kanji' entries with similar HV, excluding hidden lessons
+    return db.vocab.filter(v => v.type === 'kanji' && v.hv === targetHV && !hiddenSet.has(v.lesson));
 };
 
 export interface VocabStatus { vocab: Vocab; status: string; colorClass: string; }

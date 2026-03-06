@@ -122,7 +122,7 @@ const TimerWidget = () => {
                 {!isExpanded && isRunning ? (
                     <button 
                         onClick={() => { setIsExpanded(true); setIsPanelOpen(true); }}
-                        className={`flex items-center gap-2 px-3 py-1.5 rounded-full border shadow-[0_0_10px_rgba(0,0,0,0.5)] transition-all backdrop-blur-md ${isAlarming ? 'bg-red-600 text-white animate-pulse border-red-400' : 'bg-black/50 border-white/10 hover:border-neon-cyan/50 text-white'}`}
+                        className={`flex items-center gap-2 px-3 py-1.5 rounded-full border shadow-[0_0_10px_rgba(0,0,0,0.5)] transition-all backdrop-blur-sm ${isAlarming ? 'bg-red-600 text-white animate-pulse border-red-400' : 'bg-black/50 border-white/10 hover:border-neon-cyan/50 text-white'}`}
                     >
                         <i className={`fas ${mode === 'stopwatch' ? 'fa-stopwatch' : 'fa-hourglass-half'} ${isAlarming ? 'text-white' : 'text-neon-cyan'} text-[10px]`}></i>
                         <span className={`text-xs font-digital font-bold tracking-wider ${isAlarming ? 'text-white' : 'text-white'}`}>
@@ -136,7 +136,7 @@ const TimerWidget = () => {
                         <div className="flex items-center gap-2">
                             <button 
                                 onClick={() => setIsPanelOpen(!isPanelOpen)} 
-                                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border shadow-[0_0_10px_rgba(0,0,0,0.5)] min-w-[100px] justify-center transition-all backdrop-blur-md ${isAlarming ? 'bg-red-600 text-white animate-pulse border-red-400' : 'bg-black/80 border-white/10 hover:border-neon-cyan/50 text-white'}`}
+                                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border shadow-[0_0_10px_rgba(0,0,0,0.5)] min-w-[100px] justify-center transition-all backdrop-blur-sm ${isAlarming ? 'bg-red-600 text-white animate-pulse border-red-400' : 'bg-black/80 border-white/10 hover:border-neon-cyan/50 text-white'}`}
                             >
                                 <i className={`fas ${mode === 'clock' ? 'fa-clock' : mode === 'stopwatch' ? 'fa-stopwatch' : 'fa-hourglass-half'} ${isAlarming ? 'text-white' : 'text-neon-cyan'} text-[9px]`}></i>
                                 <span className={`text-xs font-digital font-bold tracking-wider ${isAlarming ? 'text-white' : 'text-white'}`}>
@@ -147,7 +147,7 @@ const TimerWidget = () => {
                             </button>
                             <button 
                                 onClick={() => { setIsExpanded(false); setIsPanelOpen(false); }}
-                                className="w-8 h-8 bg-black/80 backdrop-blur-md border border-white/10 rounded-lg flex items-center justify-center hover:bg-white/10 transition text-slate-400 hover:text-white"
+                                className="w-8 h-8 bg-black/80 backdrop-blur-sm border border-white/10 rounded-lg flex items-center justify-center hover:bg-white/10 transition text-slate-400 hover:text-white"
                             >
                                 <i className="fas fa-times text-[12px]"></i>
                             </button>
@@ -158,7 +158,7 @@ const TimerWidget = () => {
 
             {/* Dropdown Panel */}
             {isPanelOpen && isExpanded && (
-                <div className="pointer-events-auto mt-2 w-64 bg-[#0a0a0a]/95 border border-neon-purple/50 rounded-xl shadow-[0_0_30px_rgba(188,19,254,0.3)] p-4 animate-slide-up backdrop-blur-xl z-50">
+                <div className="pointer-events-auto mt-2 w-64 bg-[#0a0a0a]/95 border border-neon-purple/50 rounded-xl shadow-[0_0_30px_rgba(188,19,254,0.3)] p-4 animate-slide-up backdrop-blur-md z-50">
                     <div className="flex justify-between mb-4 border-b border-white/10 pb-2">
                          <button onClick={() => setMode('clock')} className={`text-[9px] uppercase font-black ${mode === 'clock' ? 'text-neon-cyan glow-text' : 'text-slate-500'}`}>Giờ</button>
                          <button onClick={() => setMode('stopwatch')} className={`text-[9px] uppercase font-black ${mode === 'stopwatch' ? 'text-neon-cyan glow-text' : 'text-slate-500'}`}>Bấm giờ</button>
@@ -456,7 +456,7 @@ export const Layout: React.FC<LayoutProps> = ({ title, onHome, onBack, onSetting
                 <motion.button 
                     whileTap={{ scale: 0.9 }}
                     onClick={() => setIsSidebarOpen(true)} 
-                    className="w-6 h-24 bg-black/50 backdrop-blur-md border border-white/10 border-l-0 rounded-r-2xl flex items-center justify-center hover:bg-white/10 transition shadow-[2px_0_10px_rgba(0,0,0,0.5)] group"
+                    className="w-6 h-24 bg-black/50 backdrop-blur-sm border border-white/10 border-l-0 rounded-r-2xl flex items-center justify-center hover:bg-white/10 transition shadow-[2px_0_10px_rgba(0,0,0,0.5)] group"
                 >
                     <div className="w-1.5 h-10 bg-white/20 rounded-full group-hover:bg-neon-cyan transition-colors"></div>
                 </motion.button>
@@ -467,7 +467,7 @@ export const Layout: React.FC<LayoutProps> = ({ title, onHome, onBack, onSetting
                 <div className={`absolute top-4 left-4 z-[90] transition-opacity duration-500 ${isBackButtonVisible ? 'opacity-100' : 'opacity-15'}`}>
                     <button 
                         onClick={onBack} 
-                        className="flex items-center gap-1 text-indigo-400 hover:text-indigo-300 transition text-xs font-black uppercase tracking-widest bg-black/50 backdrop-blur-md px-3 py-2 rounded-full border border-white/10 shadow-[0_0_15px_rgba(0,0,0,0.5)]"
+                        className="flex items-center gap-1 text-indigo-400 hover:text-indigo-300 transition text-xs font-black uppercase tracking-widest bg-black/50 backdrop-blur-sm px-3 py-2 rounded-full border border-white/10 shadow-[0_0_15px_rgba(0,0,0,0.5)]"
                     >
                         <i className="fas fa-chevron-left"></i> Quay lại
                     </button>
