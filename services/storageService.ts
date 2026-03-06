@@ -1,41 +1,7 @@
 
-import { AppDatabase, STORAGE_KEY, Vocab, UserStats, SRSStatus } from '../types';
+import { AppDatabase, Vocab, UserStats, SRSStatus } from '../types';
 
-const DEFAULT_STATS: UserStats = {
-    xp: 0,
-    level: 1,
-    streak: 0,
-    score: 0,
-    lastStudyDate: "",
-    title: "Tân binh"
-};
 
-const DEFAULT_DB: AppDatabase = {
-    vocab: [],
-    favorites: [],
-    favoriteGroups: [], // New field
-    hiddenLessons: [], 
-    mistakes: [],
-    mistakeStreaks: {}, 
-    srs: {},
-    stats: DEFAULT_STATS,
-    config: { 
-        kanjiSize: 90, 
-        autoPlayAudio: true,
-        soundEnabled: true, 
-        writingTimer: 0, 
-        writingMode: 'sequential'
-    },
-    history: {},
-    studyLog: {},
-    highScores: {
-        anki: [],
-        match: [],
-        survival: [],
-        writing: []
-    },
-    cramSession: undefined
-};
 
 export const RANKS = [
     { threshold: 2501, title: "Huyền thoại", icon: "👑", color: "text-yellow-400 drop-shadow-[0_0_15px_rgba(250,204,21,0.8)] border-yellow-500" },
@@ -78,41 +44,14 @@ export const saveVocabToServer = async (vocab: Vocab[]): Promise<boolean> => {
     }
 };
 
-export const loadDB = (): AppDatabase => {
-    try {
-        const stored = localStorage.getItem(STORAGE_KEY);
-        if (stored) {
-            const parsed = JSON.parse(stored);
-            // Migration logic for old data if needed
-            const migratedVocab = (parsed.vocab || []).map((v: any) => ({
-                ...v,
-                type: v.type || 'vocab',
-                ka: v.ka || v.hira || "-",
-                kj: v.kj || v.kanji || "-",
-                ro: v.ro || v.romaji || "-",
-                en: v.en || v.eng || "-",
-                on: v.on || "-",
-                kun: v.kun || "-"
-            }));
+import { DataManager } from './DataManager';
 
-            return { 
-                ...DEFAULT_DB, 
-                ...parsed, 
-                vocab: migratedVocab,
-                favoriteGroups: parsed.favoriteGroups || [], // Ensure field exists
-                hiddenLessons: parsed.hiddenLessons || [], 
-                stats: { ...DEFAULT_STATS, ...parsed.stats },
-                config: { ...DEFAULT_DB.config, ...parsed.config },
-                highScores: { ...DEFAULT_DB.highScores, ...(parsed.highScores || {}) }
-            };
-        }
-    } catch (e) { console.error(e); }
-    return DEFAULT_DB;
+export const loadDB = (): AppDatabase => {
+    return DataManager.initializeDatabase();
 };
 
 export const saveDB = (db: AppDatabase) => {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(db)); } 
-    catch (e) { console.error(e); }
+    DataManager.saveDatabase(db);
 };
 
 export const exportVocabData = (db: AppDatabase, lessonId?: string) => {

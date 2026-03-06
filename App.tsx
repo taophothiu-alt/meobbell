@@ -32,23 +32,23 @@ function App() {
     const [view, setView] = useState<ViewName>('dashboard');
     const [viewHistory, setViewHistory] = useState<ViewName[]>([]);
 
-    // Fetch vocab from server on mount
-    useEffect(() => {
-        const syncVocab = async () => {
-            const serverVocab = await fetchVocabFromServer();
-            if (serverVocab.length > 0) {
-                setDb(prev => {
-                    // Merge server vocab with local SRS/stats
-                    // If server has vocab, we trust it as the source of truth for the list
-                    // But we keep local SRS progress for matching IDs
-                    const newDb = { ...prev, vocab: serverVocab };
-                    saveDB(newDb); // Update local cache
-                    return newDb;
-                });
-            }
-        };
-        syncVocab();
-    }, []);
+    // Fetch vocab from server on mount - REMOVED to rely on static file
+    // useEffect(() => {
+    //     const syncVocab = async () => {
+    //         const serverVocab = await fetchVocabFromServer();
+    //         if (serverVocab.length > 0) {
+    //             setDb(prev => {
+    //                 // Merge server vocab with local SRS/stats
+    //                 // If server has vocab, we trust it as the source of truth for the list
+    //                 // But we keep local SRS progress for matching IDs
+    //                 const newDb = { ...prev, vocab: serverVocab };
+    //                 saveDB(newDb); // Update local cache
+    //                 return newDb;
+    //             });
+    //         }
+    //     };
+    //     syncVocab();
+    // }, []);
 
     const changeView = (newView: ViewName) => {
         if (newView === view) return;

@@ -10,9 +10,10 @@ interface DashboardProps {
     onStartLesson: (lessonId: string | 'FAV' | 'SRS') => void;
     onCheckIn?: () => void;
     onOpenFav?: () => void;
+    onOpenSync?: () => void;
 }
 
-export const DashboardView: React.FC<DashboardProps> = ({ db, onChangeView, onStartLesson, onCheckIn, onOpenFav }) => {
+export const DashboardView: React.FC<DashboardProps> = ({ db, onChangeView, onStartLesson, onCheckIn, onOpenFav, onOpenSync }) => {
     const { lastStudyDate } = db.stats;
     const dueItems = getDueVocab(db);
     const dueCount = dueItems.length;
@@ -156,6 +157,12 @@ export const DashboardView: React.FC<DashboardProps> = ({ db, onChangeView, onSt
                             <i className="fas fa-database text-2xl md:text-3xl text-fuchsia-500 group-hover:scale-110 transition"></i>
                         </div>
                         <span className="text-[10px] font-black text-white uppercase tracking-widest text-center">Dữ liệu</span>
+                    </BentoBlock>
+                    <BentoBlock onClick={onOpenSync} colorClass="border-indigo-400 hover:border-white shadow-[0_0_20px_rgba(129,140,248,0.3)]" className="aspect-[2/1] md:aspect-square flex flex-col items-center justify-center gap-2 group p-4 bg-slate-900/40 backdrop-blur-md">
+                        <div className="w-12 h-12 rounded-full bg-indigo-500/10 flex items-center justify-center mb-1 group-hover:bg-indigo-500/30 transition-all shadow-[0_0_15px_rgba(129,140,248,0.2)]">
+                            <i className="fas fa-sync-alt text-2xl md:text-3xl text-indigo-400 group-hover:rotate-180 transition-all duration-500"></i>
+                        </div>
+                        <span className="text-[10px] font-black text-white uppercase tracking-widest text-center">Đồng bộ</span>
                     </BentoBlock>
                 </div>
             </div>
