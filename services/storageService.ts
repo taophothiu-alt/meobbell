@@ -1,5 +1,6 @@
 
 import { AppDatabase, STORAGE_KEY, Vocab, UserStats, SRSStatus } from '../types';
+import { initialVocabData } from '../data/initial_vocab';
 
 const DEFAULT_STATS: UserStats = {
     xp: 0,
@@ -11,7 +12,7 @@ const DEFAULT_STATS: UserStats = {
 };
 
 const DEFAULT_DB: AppDatabase = {
-    vocab: [],
+    vocab: initialVocabData,
     favorites: [],
     favoriteGroups: [], // New field
     hiddenLessons: [], 
