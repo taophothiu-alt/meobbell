@@ -46,22 +46,22 @@ export const StudyView: React.FC<StudyViewProps> = ({
                         onClick={() => { onJump(i); setShowFavList(false); }}
                         className={`p-3 rounded-xl border flex items-center justify-between cursor-pointer transition ${i === index ? 'bg-indigo-900/50 border-indigo-500' : 'bg-slate-900 border-slate-800 hover:border-slate-600'}`}
                     >
-                        <div className="flex items-center gap-4">
-                            <div className="text-xs font-black text-slate-500 w-6">{i + 1}</div>
-                            <div>
-                                <div className="text-lg font-serif text-white">{v.kj !== '-' ? v.kj : v.ka}</div>
-                                <div className="text-xs text-slate-400 truncate max-w-[200px]">{v.mean}</div>
+                        <div className="flex items-center gap-4 w-full overflow-hidden">
+                            <div className="text-xs font-black text-slate-500 w-6 shrink-0">{i + 1}</div>
+                            <div className="flex-1 min-w-0">
+                                <div className="flex items-baseline gap-2">
+                                    <div className="text-lg font-serif text-white">{v.kj !== '-' ? v.kj : v.ka}</div>
+                                    <div className="text-xs font-black text-emerald-500">{v.ka}</div>
+                                </div>
+                                <div className="text-xs text-slate-400 truncate">{v.mean}</div>
+                                {(v.on || v.kun) && (
+                                    <div className="flex gap-2 mt-1 text-[9px] uppercase tracking-wider">
+                                        {v.on && <span className="text-cyan-400">ON: {v.on}</span>}
+                                        {v.kun && <span className="text-amber-400">KUN: {v.kun}</span>}
+                                    </div>
+                                )}
                             </div>
                         </div>
-                        {/* We don't have isFavorite for each item here unless we check db.favorites. 
-                            But StudyView doesn't have db. 
-                            We can assume if it's in the list, it's part of the lesson.
-                            If we want to show heart, we need to know if it's favorited.
-                            We can pass `favorites` array to StudyViewProps or just skip the heart for now.
-                            The user asked for "list of favorited words".
-                            If I can't show the heart, it's just a list.
-                            I'll skip the heart icon for now to avoid prop drilling hell, or I can pass `favorites` list.
-                        */}
                     </div>
                 ))}
             </div>
@@ -131,8 +131,15 @@ export const StudyView: React.FC<StudyViewProps> = ({
     // Handle key navigation
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === 'ArrowRight') handleNext();
+            if (e.key === 'ArrowRight' || e.key === 'Enter') handleNext();
             if (e.key === 'ArrowLeft') handlePrev();
+            if (e.key === ' ') {
+                e.preventDefault();
+                handleSpeak();
+            }
+            // Support < and > keys (shift + , / .)
+            if (e.key === '>' || e.key === '.') handleNext();
+            if (e.key === '<' || e.key === ',') handlePrev();
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);

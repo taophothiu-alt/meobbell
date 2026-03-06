@@ -2,7 +2,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Layout } from './components/Layout';
 import { DashboardView } from './components/views/DashboardView';
-import { DataFactoryView } from './components/views/DataFactoryView';
 import { LessonListView } from './components/views/LessonListView';
 import { StudyView } from './components/views/StudyView';
 import { WritingView } from './components/views/WritingView';
@@ -590,22 +589,20 @@ function App() {
                     onCheckIn={handleCheckIn}
                     onOpenFav={() => changeView('favorites-manager')}
                 />;
-            case 'data-factory':
-                return <DataFactoryView 
-                    db={db}
-                    onImport={handleImport} 
-                    onClose={handleBack} 
-                    onNotify={showToast} 
-                    onUpdateDb={(newDb) => setDb(newDb)}
-                />;
             case 'lesson-list':
-                return <LessonListView db={db} onSelect={(id) => { setLessonId(id); changeView('reflex-selector'); }} />;
+                return <LessonListView 
+                    db={db} 
+                    onSelect={(id) => { setLessonId(id); changeView('reflex-selector'); }} 
+                    onUpdateDb={setDb}
+                />;
             case 'settings':
                 return (
                     <SettingsView 
                         db={db} 
                         onClose={handleBack} 
                         onUpdateDb={(newDb) => setDb(newDb)} 
+                        onImport={handleImport}
+                        onNotify={showToast}
                         onOpenExport={() => setShowExportSelector(true)}
                     />
                 );

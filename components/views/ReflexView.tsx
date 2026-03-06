@@ -117,11 +117,45 @@ const AnkiMode: React.FC<ReflexViewProps> = ({ vocab, srsStatus, onNext, current
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.repeat) return;
             const key = e.key.toLowerCase();
-            if (key === ' ' || key === 'enter') {
+            
+            // Navigation Shortcuts
+            if (key === 'arrowleft') {
+                e.preventDefault();
+                onPrev();
+            }
+            
+            // ArrowRight: If flipped, maybe treat as "Good" (3)? Or just skip?
+            // Usually in flashcards, Right = Next. But we need a rating.
+            // Let's map Right Arrow to "Good" (3) if flipped, or Flip if not flipped?
+            // User asked for "< > space enter".
+            // Let's make:
+            // Space: Flip
+            // Enter: Speak
+            // Left: Prev
+            // Right: Next (if possible, but we need rating). 
+            // Let's make Right Arrow = Flip (if front) -> Good (if back) for fast flow?
+            // Or maybe just ignore Right Arrow for rating to avoid accidental rating.
+            // Let's stick to: Left = Prev. Right = Flip (if front).
+            
+            if (key === 'arrowright') {
+                e.preventDefault();
+                if (!isFlipped) handleFlip();
+            }
+
+            if (key === ' ') {
                 e.preventDefault();
                 setPressedKey('space');
                 if (!isFlipped) handleFlip();
-            } else if (isFlipped) {
+                else handleSpeak(); // Space replays audio if flipped
+            }
+            
+            if (key === 'enter') {
+                e.preventDefault();
+                setPressedKey('enter');
+                handleSpeak(); // Enter always speaks
+            }
+
+            if (isFlipped) {
                 if (key === '1') { setPressedKey('1'); handleRate(1); }
                 if (key === '2') { setPressedKey('2'); handleRate(2); }
                 if (key === '3') { setPressedKey('3'); handleRate(3); }

@@ -16,6 +16,7 @@ const DEFAULT_DB: AppDatabase = {
     favorites: [],
     favoriteGroups: [], // New field
     hiddenLessons: [], 
+    lessonNames: {}, // New field
     mistakes: [],
     mistakeStreaks: {}, 
     srs: {},
@@ -91,6 +92,7 @@ export const loadDB = (): AppDatabase => {
                 vocab: migratedVocab,
                 favoriteGroups: parsed.favoriteGroups || [], // Ensure field exists
                 hiddenLessons: parsed.hiddenLessons || [], 
+                lessonNames: parsed.lessonNames || {}, // Ensure field exists
                 stats: { ...DEFAULT_STATS, ...parsed.stats },
                 config: { ...DEFAULT_DB.config, ...parsed.config },
                 highScores: { ...DEFAULT_DB.highScores, ...(parsed.highScores || {}) }
