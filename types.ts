@@ -12,6 +12,7 @@ export interface Vocab {
     kun: string;
     en: string; // was eng
     example?: string;
+    level?: 'N5' | 'N4' | 'N3'; // New field for JLPT level
 }
 
 export interface SRSStatus {
@@ -52,6 +53,7 @@ export interface AppConfig {
     writingMode: 'sequential' | 'shuffle';
     voiceURI_ja?: string; // Preferred Japanese voice
     voiceURI_vi?: string; // Preferred Vietnamese voice
+    level?: 'N5' | 'N4' | 'N3'; // Current selected level
 }
 
 export interface CramSession {

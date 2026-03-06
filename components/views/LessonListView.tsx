@@ -12,8 +12,12 @@ interface LessonListProps {
 
 export const LessonListView: React.FC<LessonListProps> = ({ db, onSelect, onUpdateDb }) => {
     const hiddenSet = new Set(db.hiddenLessons || []);
-    // Show ALL lessons, sorted
-    const lessons = (Array.from(new Set(db.vocab.map(v => v.lesson))) as string[])
+    const currentLevel = db.config.level || 'N5';
+    
+    // Show ALL lessons for the current level, sorted
+    const lessons = (Array.from(new Set(db.vocab
+        .filter(v => !v.level || v.level === currentLevel)
+        .map(v => v.lesson))) as string[])
         .sort((a, b) => parseInt(a) - parseInt(b));
 
     const [showHiddenManager, setShowHiddenManager] = React.useState(false);

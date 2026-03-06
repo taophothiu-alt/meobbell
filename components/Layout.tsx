@@ -324,8 +324,22 @@ export const Layout: React.FC<LayoutProps> = ({ title, onHome, onBack, onSetting
 
     // Stats calculation for Sidebar
     const { streak } = db.stats;
-    const totalVocab = db.vocab.filter(v => v.type === 'vocab').length;
-    const masteredCount = (Object.values(db.srs) as SRSStatus[]).filter(s => s.status === 'review').length;
+    const currentLevel = db.config.level || 'N5';
+    
+    // Filter vocab by level
+    const levelVocab = db.vocab.filter(v => 
+        v.type === 'vocab' && 
+        (!v.level || v.level === currentLevel)
+    );
+    
+    const totalVocab = levelVocab.length;
+    
+    // Count mastered items for this level
+    const masteredCount = levelVocab.filter(v => {
+        const status = db.srs[v.id];
+        return status && status.status === 'review';
+    }).length;
+
     const progressPercent = totalVocab > 0 ? (masteredCount / totalVocab) * 100 : 0;
     const rankInfo = getRankByCount(masteredCount);
 

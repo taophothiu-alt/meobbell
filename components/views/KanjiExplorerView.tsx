@@ -225,9 +225,11 @@ export const KanjiExplorerView: React.FC<KanjiExplorerViewProps> = ({ db, onRevi
 
     const groupedData = useMemo(() => {
         const hiddenSet = new Set(db.hiddenLessons || []);
+        const currentLevel = db.config.level || 'N5';
         const groups: Record<string, { kanjis: Vocab[], words: Vocab[] }> = {};
         db.vocab.forEach(v => {
             if (hiddenSet.has(v.lesson)) return; // Skip hidden lessons
+            if (v.level && v.level !== currentLevel) return; // Filter by level
             if (v.kj && v.kj !== '-' && v.kj !== '---') {
                 const status = db.srs[v.id]?.status || 'new';
                 const isMastered = status === 'review';
@@ -243,7 +245,7 @@ export const KanjiExplorerView: React.FC<KanjiExplorerViewProps> = ({ db, onRevi
             }
         });
         return Object.entries(groups).sort((a, b) => parseInt(a[0]) - parseInt(b[0]));
-    }, [db.vocab, db.srs, filter, db.hiddenLessons]);
+    }, [db.vocab, db.srs, filter, db.hiddenLessons, db.config.level]);
 
     const getStatusColor = (vId: string) => {
         const status = db.srs[vId]?.status || 'new';

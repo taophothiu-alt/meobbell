@@ -14,12 +14,65 @@ interface DashboardProps {
 
 export const DashboardView: React.FC<DashboardProps> = ({ db, onChangeView, onStartLesson, onCheckIn, onOpenFav }) => {
     const { lastStudyDate } = db.stats;
+    const currentLevel = db.config.level || 'N5';
     const dueItems = getDueVocab(db);
     const dueCount = dueItems.length;
     const [showCalendar, setShowCalendar] = useState(false);
     const [displayDate, setDisplayDate] = useState(new Date());
 
-    const lastLessonId = db.config.lastLessonId;
+    const lastLessonId = useMemo(() => {
+        // Find the last studied lesson for the current level
+        const levelVocab = db.vocab.filter(v => !v.level || v.level === currentLevel);
+        if (levelVocab.length === 0) return null;
+
+        // Group vocab by lesson
+        const lessonMap = new Map<string, number>(); // lessonId -> maxLastReviewed
+        
+        levelVocab.forEach(v => {
+            const srs = db.srs[v.id];
+            const lastReviewed = srs ? srs.lastReviewed : 0;
+            const currentMax = lessonMap.get(v.lesson) || 0;
+            if (lastReviewed > currentMax) {
+                lessonMap.set(v.lesson, lastReviewed);
+            }
+            // Ensure lesson exists in map even if never reviewed
+            if (!lessonMap.has(v.lesson)) {
+                lessonMap.set(v.lesson, 0);
+            }
+        });
+
+        // Find lesson with highest lastReviewed
+        let maxTime = -1;
+        let bestLesson = "1"; // Default to lesson 1
+
+        // If no lessons have been reviewed (all 0), we want the lowest lesson number
+        const lessons = Array.from(lessonMap.keys()).sort((a, b) => parseInt(a) - parseInt(b));
+        
+        // Check if any lesson has been studied
+        const hasStudiedAny = Array.from(lessonMap.values()).some(t => t > 0);
+
+        if (!hasStudiedAny) {
+            return lessons.length > 0 ? lessons[0] : "1";
+        }
+
+        lessonMap.forEach((time, lesson) => {
+            if (time > maxTime) {
+                maxTime = time;
+                bestLesson = lesson;
+            }
+        });
+
+        return bestLesson;
+    }, [db.vocab, db.srs, currentLevel]);
+    
+    // Filter vocab by level for stats
+    const levelVocab = useMemo(() => {
+        return db.vocab.filter(v => !v.level || v.level === currentLevel);
+    }, [db.vocab, currentLevel]);
+
+    const totalVocabCount = levelVocab.length;
+    const masteredCount = levelVocab.filter(v => db.srs[v.id]?.status === 'review').length;
+    const completionRate = totalVocabCount > 0 ? Math.round((masteredCount / totalVocabCount) * 100) : 0;
 
     const BentoBlock = ({ children, className = "", onClick, colorClass = "border-white/10" }: any) => (
         <motion.div 
@@ -106,7 +159,7 @@ export const DashboardView: React.FC<DashboardProps> = ({ db, onChangeView, onSt
                             colorClass="border-emerald-500 shadow-[0_0_30px_rgba(16,185,129,0.3)]"
                         >
                             <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-emerald-500/10 via-transparent to-transparent"></div>
-                            <div className="text-[8px] font-black text-emerald-300 uppercase tracking-widest mb-1 opacity-80 relative z-10">Học tiếp</div>
+                            <div className="text-[8px] font-black text-emerald-300 uppercase tracking-widest mb-1 opacity-80 relative z-10">HỌC TIẾP {currentLevel}</div>
                             <div className="text-5xl font-black text-white italic tracking-tighter mb-3 group-hover:text-emerald-300 transition-colors relative z-10 text-shadow-lg">BÀI {lastLessonId}</div>
                             <div className="text-[8px] font-bold text-emerald-950 bg-emerald-400 px-4 py-1.5 rounded-full uppercase tracking-[0.2em] group-hover:bg-white group-hover:text-emerald-600 transition-all relative z-10 shadow-lg">TIẾP TỤC</div>
                         </BentoBlock>

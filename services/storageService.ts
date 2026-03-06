@@ -1,6 +1,6 @@
 
 import { AppDatabase, STORAGE_KEY, Vocab, UserStats, SRSStatus } from '../types';
-import { initialVocabData } from '../data/initial_vocab';
+import { allVocabData } from '../data/index';
 
 const DEFAULT_STATS: UserStats = {
     xp: 0,
@@ -12,7 +12,7 @@ const DEFAULT_STATS: UserStats = {
 };
 
 const DEFAULT_DB: AppDatabase = {
-    vocab: initialVocabData,
+    vocab: allVocabData,
     favorites: [],
     favoriteGroups: [], // New field
     hiddenLessons: [], 
@@ -25,7 +25,8 @@ const DEFAULT_DB: AppDatabase = {
         autoPlayAudio: true,
         soundEnabled: true, 
         writingTimer: 0, 
-        writingMode: 'sequential'
+        writingMode: 'sequential',
+        level: 'N5' // Default level
     },
     history: {},
     studyLog: {},
@@ -66,7 +67,8 @@ export const loadDB = (): AppDatabase => {
                 ro: v.ro || v.romaji || "-",
                 en: v.en || v.eng || "-",
                 on: v.on || "-",
-                kun: v.kun || "-"
+                kun: v.kun || "-",
+                level: v.level || 'N5' // Default to N5 for existing data
             }));
 
             // MERGE INITIAL DATA IF MISSING
@@ -74,7 +76,7 @@ export const loadDB = (): AppDatabase => {
             const existingIds = new Set(migratedVocab.map((v: any) => String(v.id)));
             let addedCount = 0;
             
-            initialVocabData.forEach(initItem => {
+            allVocabData.forEach(initItem => {
                 if (!existingIds.has(String(initItem.id))) {
                     migratedVocab.push(initItem);
                     addedCount++;
@@ -108,9 +110,10 @@ export const saveDB = (db: AppDatabase) => {
 export const exportVocabData = (db: AppDatabase, lessonId?: string) => {
     try {
         const hiddenSet = new Set(db.hiddenLessons || []);
+        const currentLevel = db.config.level || 'N5';
         const dataToExport = lessonId 
-            ? db.vocab.filter(v => v.lesson === lessonId)
-            : db.vocab.filter(v => !hiddenSet.has(v.lesson)); // Filter hidden lessons
+            ? db.vocab.filter(v => v.lesson === lessonId && (!v.level || v.level === currentLevel))
+            : db.vocab.filter(v => !hiddenSet.has(v.lesson) && (!v.level || v.level === currentLevel)); // Filter hidden lessons and level
 
         if (dataToExport.length === 0) {
             alert("Không có dữ liệu để xuất!");
@@ -297,10 +300,12 @@ export const getSRSIntervalDisplay = (current: SRSStatus | undefined, rating: 1 
 export const getDueVocab = (db: AppDatabase, type: 'vocab' | 'kanji' = 'vocab'): Vocab[] => {
     const now = Date.now();
     const hiddenSet = new Set(db.hiddenLessons || []);
+    const currentLevel = db.config.level || 'N5';
     
     return db.vocab.filter(v => {
         if (v.type !== type) return false;
         if (hiddenSet.has(v.lesson)) return false; // Skip hidden lessons
+        if (v.level && v.level !== currentLevel) return false; // Filter by level
         
         const srs = db.srs[v.id];
         // If no SRS, it's new (due immediately). If SRS exists, check nextReview.
@@ -426,14 +431,26 @@ export const parseVocabString = (raw: string, lesson: string): Vocab[] => {
 
 export const getRelatedVocab = (db: AppDatabase, kanjiChar: string): Vocab[] => {
     const hiddenSet = new Set(db.hiddenLessons || []);
+    const currentLevel = db.config.level || 'N5';
     // Only return 'vocab' type related words, not isolated kanji entries, and exclude hidden lessons
-    return db.vocab.filter(v => v.type === 'vocab' && v.kj && v.kj.includes(kanjiChar) && !hiddenSet.has(v.lesson));
+    return db.vocab.filter(v => 
+        v.type === 'vocab' && 
+        v.kj && v.kj.includes(kanjiChar) && 
+        !hiddenSet.has(v.lesson) &&
+        (!v.level || v.level === currentLevel)
+    );
 };
 
 export const getPhoneticFamily = (db: AppDatabase, targetHV: string): Vocab[] => {
     const hiddenSet = new Set(db.hiddenLessons || []);
+    const currentLevel = db.config.level || 'N5';
     // Return other 'kanji' entries with similar HV, excluding hidden lessons
-    return db.vocab.filter(v => v.type === 'kanji' && v.hv === targetHV && !hiddenSet.has(v.lesson));
+    return db.vocab.filter(v => 
+        v.type === 'kanji' && 
+        v.hv === targetHV && 
+        !hiddenSet.has(v.lesson) &&
+        (!v.level || v.level === currentLevel)
+    );
 };
 
 export interface VocabStatus { vocab: Vocab; status: string; colorClass: string; }

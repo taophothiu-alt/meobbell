@@ -117,6 +117,16 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ db, onClose, onUpdat
         }
     };
 
+    const [selectedLevel, setSelectedLevel] = useState<'N5' | 'N4' | 'N3'>(db.config.level || 'N5');
+
+    const updateLevel = (level: 'N5' | 'N4' | 'N3') => {
+        setSelectedLevel(level);
+        const newDb = { ...db, config: { ...db.config, level: level } };
+        saveDB(newDb);
+        onUpdateDb(newDb);
+        onNotify(`Đã chuyển sang cấp độ ${level}`, 'success');
+    };
+
     return (
         <div className="absolute inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-6 animate-slide-up overflow-y-auto">
             <div className="bg-slate-900 border-2 border-slate-700 rounded-3xl p-6 md:p-8 max-w-2xl w-full shadow-2xl space-y-6 relative my-auto max-h-[90vh] flex flex-col">
@@ -144,6 +154,22 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ db, onClose, onUpdat
                 <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-6">
                     {activeTab === 'general' ? (
                         <div className="space-y-6">
+                            {/* Level Selection */}
+                            <div className="space-y-3">
+                                <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">Cấp độ học</div>
+                                <div className="flex gap-2">
+                                    {(['N5', 'N4', 'N3'] as const).map(level => (
+                                        <button
+                                            key={level}
+                                            onClick={() => updateLevel(level)}
+                                            className={`flex-1 py-3 rounded-xl font-black text-sm uppercase transition border-2 ${selectedLevel === level ? 'bg-indigo-600 border-indigo-500 text-white shadow-lg shadow-indigo-500/20' : 'bg-slate-800 border-slate-700 text-slate-500 hover:border-slate-500 hover:text-slate-300'}`}
+                                        >
+                                            {level}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
                             {/* Sound Toggle */}
                             <div className="flex items-center justify-between bg-slate-800/50 p-4 rounded-xl border border-white/5">
                                 <div className="flex items-center gap-3">
