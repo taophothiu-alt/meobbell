@@ -16,8 +16,6 @@ import { SettingsView } from './components/views/SettingsView';
 import { FavoritesManagerView } from './components/views/FavoritesManagerView';
 import { loadDB, saveDB, updateStats, calculateSRS, getDueVocab, exportVocabData, resetLessonStats } from './services/storageService';
 import { AppDatabase, ViewName, ModeName, Vocab } from './types';
-import { useAuth } from './contexts/AuthContext';
-import { getUserData, saveUserData } from './services/firebase';
 
 interface ConfirmModalProps {
     title: string;
@@ -32,54 +30,6 @@ function App() {
     const [db, setDb] = useState<AppDatabase>(loadDB());
     const [view, setView] = useState<ViewName>('dashboard');
     const [viewHistory, setViewHistory] = useState<ViewName[]>([]);
-    const { user, login, logout } = useAuth();
-
-    // Sync from Cloud on Login
-    useEffect(() => {
-        if (user) {
-            getUserData(user.uid).then(data => {
-                if (data) {
-                    setDb(prev => {
-                        const newDb = {
-                            ...prev,
-                            srs: data.srs || prev.srs,
-                            stats: data.stats || prev.stats,
-                            favorites: data.favorites || prev.favorites,
-                            favoriteGroups: data.favoriteGroups || prev.favoriteGroups,
-                            hiddenLessons: data.hiddenLessons || prev.hiddenLessons,
-                        };
-                        saveDB(newDb);
-                        return newDb;
-                    });
-                } else {
-                    // Initial sync to cloud
-                    saveUserData(user.uid, {
-                        srs: db.srs,
-                        stats: db.stats,
-                        favorites: db.favorites,
-                        favoriteGroups: db.favoriteGroups,
-                        hiddenLessons: db.hiddenLessons
-                    });
-                }
-            });
-        }
-    }, [user]);
-
-    // Sync to Cloud on Change
-    useEffect(() => {
-        if (user) {
-            const timeoutId = setTimeout(() => {
-                saveUserData(user.uid, {
-                    srs: db.srs,
-                    stats: db.stats,
-                    favorites: db.favorites,
-                    favoriteGroups: db.favoriteGroups,
-                    hiddenLessons: db.hiddenLessons
-                });
-            }, 2000); // 2s debounce
-            return () => clearTimeout(timeoutId);
-        }
-    }, [db, user]);
 
     const changeView = (newView: ViewName) => {
         if (newView === view) return;
@@ -972,9 +922,6 @@ function App() {
             onSettings={() => changeView('settings')} 
             onOpenRules={() => setShowRules(true)} 
             onCheckIn={handleCheckIn}
-            user={user}
-            login={login}
-            logout={logout}
         >
             {renderContent()}
             {showResetSelector && renderResetSelectorModal()}

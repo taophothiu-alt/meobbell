@@ -1,13 +1,10 @@
 
 import React, { useState, useEffect } from 'react';
-import { AppDatabase } from '../types';
+import { AppDatabase, SRSStatus } from '../types';
 import { playSfx } from '../services/audioService';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Home, Settings, Flame, Layers, CheckCircle } from 'lucide-react';
 import { getRankByCount } from '../services/storageService';
-
-import { User } from 'firebase/auth';
-import { LoginNotification } from './LoginNotification';
 
 interface LayoutProps {
     title: string;
@@ -20,9 +17,6 @@ interface LayoutProps {
     onOpenRules?: () => void;
     db: AppDatabase;
     onCheckIn?: () => void;
-    user: User | null;
-    login: () => void;
-    logout: () => void;
 }
 
 // --- GLOBAL TIMER WIDGET ---
@@ -248,7 +242,7 @@ const TimerWidget = () => {
     );
 };
 
-export const Layout: React.FC<LayoutProps> = ({ title, onHome, onBack, onSettings, children, showBack, showHome = true, db, onCheckIn, user, login, logout }) => {
+export const Layout: React.FC<LayoutProps> = ({ title, onHome, onBack, onSettings, children, showBack, showHome = true, db, onCheckIn }) => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [isBackButtonVisible, setIsBackButtonVisible] = useState(true);
     const [showCheckInModal, setShowCheckInModal] = useState(false);
@@ -372,7 +366,6 @@ export const Layout: React.FC<LayoutProps> = ({ title, onHome, onBack, onSetting
 
     return (
         <div className="h-[100dvh] w-full flex flex-col font-sans relative overflow-hidden text-slate-100 bg-black">
-            <LoginNotification />
             {/* BACKGROUND: Pure Black */}
             <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden bg-black">
                 <div className="absolute inset-0 bg-[linear-gradient(rgba(20,20,20,0.5)1px,transparent_1px),linear-gradient(90deg,rgba(20,20,20,0.5)1px,transparent_1px)] bg-[size:40px_40px] opacity-20"></div>
@@ -406,44 +399,16 @@ export const Layout: React.FC<LayoutProps> = ({ title, onHome, onBack, onSetting
                     </button>
                 </div>
 
-                {/* User Info / Login */}
-                <div className="mb-6">
-                    {user ? (
-                        <div className="bg-slate-900/50 rounded-xl p-4 border border-white/10 flex items-center gap-3">
-                            {user.photoURL ? (
-                                <img src={user.photoURL} alt="User" className="w-10 h-10 rounded-full border border-white/20" referrerPolicy="no-referrer" />
-                            ) : (
-                                <div className="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white font-bold text-lg">
-                                    {user.displayName ? user.displayName.charAt(0).toUpperCase() : 'U'}
-                                </div>
-                            )}
-                            <div className="flex-1 min-w-0">
-                                <div className="text-xs font-bold text-white truncate">{user.displayName || 'User'}</div>
-                                <div className="text-[10px] text-slate-500 truncate">{user.email}</div>
-                            </div>
-                            <button onClick={logout} className="text-slate-500 hover:text-rose-500 transition">
-                                <i className="fas fa-sign-out-alt"></i>
-                            </button>
-                        </div>
-                    ) : (
-                        <button 
-                            onClick={() => {
-                                console.log("Login button clicked");
-                                if (login) {
-                                    login();
-                                } else {
-                                    alert("Login function is undefined!");
-                                }
-                            }}
-                            className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-black uppercase text-xs tracking-widest transition shadow-lg flex items-center justify-center gap-2"
-                        >
-                            <i className="fab fa-google"></i> Đăng nhập
-                        </button>
-                    )}
-                </div>
-
                 {/* Navigation Buttons */}
                 <div className="flex flex-col gap-2 mb-6">
+                    {showHome && (
+                        <button 
+                            onClick={() => { onHome(); setIsSidebarOpen(false); }}
+                            className="w-full py-3 flex items-center justify-center gap-3 rounded-xl bg-white/5 border border-white/10 text-xs font-black uppercase tracking-widest hover:bg-white/10 transition"
+                        >
+                            <Home size={16} /> Trang chủ
+                        </button>
+                    )}
                     <button 
                         onClick={() => { window.dispatchEvent(new CustomEvent('open-timer')); setIsSidebarOpen(false); }}
                         className="w-full py-3 flex items-center justify-center gap-3 rounded-xl bg-white/5 border border-white/10 text-xs font-black uppercase tracking-widest hover:bg-white/10 transition text-neon-cyan"
