@@ -427,7 +427,14 @@ export const Layout: React.FC<LayoutProps> = ({ title, onHome, onBack, onSetting
                         </div>
                     ) : (
                         <button 
-                            onClick={login}
+                            onClick={() => {
+                                console.log("Login button clicked");
+                                if (login) {
+                                    login();
+                                } else {
+                                    alert("Login function is undefined!");
+                                }
+                            }}
                             className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-black uppercase text-xs tracking-widest transition shadow-lg flex items-center justify-center gap-2"
                         >
                             <i className="fab fa-google"></i> Đăng nhập

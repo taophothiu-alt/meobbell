@@ -34,14 +34,16 @@ export { auth, db, googleProvider };
 
 export const loginWithGoogle = async () => {
     if (!auth || !googleProvider) {
+        alert("Lỗi: Chưa kết nối được với Firebase. Hãy kiểm tra lại API Key và cấu hình trong .env");
         console.warn("Firebase Auth not initialized");
         return null;
     }
     try {
         const result = await signInWithPopup(auth, googleProvider);
         return result.user;
-    } catch (error) {
+    } catch (error: any) {
         console.error("Error logging in with Google:", error);
+        alert("Đăng nhập thất bại: " + error.message);
         throw error;
     }
 };
