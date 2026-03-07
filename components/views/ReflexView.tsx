@@ -84,7 +84,7 @@ const SRSButton: React.FC<SRSButtonProps> = ({ label, time, color, onClick, hotk
     );
 };
 
-const AnkiMode: React.FC<ReflexViewProps> = ({ vocab, srsStatus, onNext, currentIndex, total, db, lessonId, allVocab }) => {
+const AnkiMode: React.FC<ReflexViewProps> = ({ vocab, srsStatus, onNext, onPrev, currentIndex, total, db, lessonId, allVocab }) => {
     const [isFlipped, setIsFlipped] = useState(false);
     const [hintUsed, setHintUsed] = useState(false);
     const [pressedKey, setPressedKey] = useState<string | null>(null); 
@@ -354,6 +354,9 @@ const AnkiMode: React.FC<ReflexViewProps> = ({ vocab, srsStatus, onNext, current
                             <div className="text-center w-full h-full flex flex-col items-center justify-center overflow-hidden" style={{ containerType: 'inline-size' }}>
                                 <span className="text-[8px] font-black text-slate-500 uppercase tracking-[0.3em] mb-2 block glow-text">Ý NGHĨA</span>
                                 <div className="font-black text-white leading-tight whitespace-normal break-words px-2 drop-shadow-md" style={{ fontSize: `min(${80 * userScale}px, ${60 / Math.sqrt(vocab.mean.length)}cqi)` }}>{vocab.mean}</div>
+                                {vocab.ro && (
+                                    <div className="mt-2 text-sm md:text-base font-bold text-slate-400 opacity-80">{vocab.ro}</div>
+                                )}
                             </div>
                         </div>
                         <div className="grid grid-cols-4 border-t border-indigo-500/30 shrink-0 bg-slate-900/50 divide-x divide-indigo-500/20 h-14 md:h-16 backdrop-blur-sm">

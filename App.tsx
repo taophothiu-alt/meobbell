@@ -792,6 +792,7 @@ function App() {
                     onNext={(rating) => handleResult(rating)}
                     onPrev={() => updateIndex(currentIndex - 1)}
                     onClose={handleBack}
+                    lessonId={lessonId || ''}
                 />;
             case 'reflex':
                 // Fix for SRS completion (Queue empty)

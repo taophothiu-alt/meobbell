@@ -505,14 +505,19 @@ export const CramModeView: React.FC<CramModeViewProps> = ({ vocabList, lessonId,
             <div className="absolute top-0 left-0 w-full h-24 z-50 pointer-events-none bg-gradient-to-b from-black via-black/80 to-transparent">
                  <div className="w-full h-full flex justify-between items-start pt-6 px-6 max-w-4xl mx-auto">
                     
-                    {/* LEFT: HOME BUTTON */}
-                    <div className="pointer-events-auto relative">
+                    {/* LEFT: HOME BUTTON & LESSON BADGE */}
+                    <div className="pointer-events-auto relative flex items-center gap-4">
                         <button 
                             onClick={handleSpeak}
                             className="w-12 h-12 rounded-xl bg-slate-800 border-2 border-slate-600 shadow-lg backdrop-blur-md flex items-center justify-center text-slate-400 hover:text-white hover:border-white transition active:scale-95"
                         >
                             <i className="fas fa-volume-up text-lg"></i>
                         </button>
+                        {lessonId && (
+                            <div className="text-[10px] md:text-xs font-black uppercase text-indigo-300 tracking-widest border border-indigo-500/50 px-3 py-1.5 rounded-lg bg-indigo-900/40 shadow-[0_0_10px_rgba(99,102,241,0.2)] backdrop-blur-md">
+                                {lessonId === 'SRS' ? 'ÔN TẬP' : `BÀI ${lessonId}`}
+                            </div>
+                        )}
                     </div>
 
                     {/* CENTER: REMOVED LOCK TIMER */}

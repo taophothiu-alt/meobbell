@@ -1,7 +1,7 @@
 
 import React, { useRef, useEffect, useState } from 'react';
 import { Vocab } from '../../types';
-import { playSfx } from '../../services/audioService';
+import { playSfx, speakText } from '../../services/audioService';
 
 interface WritingViewProps {
     vocab: Vocab;
@@ -195,6 +195,7 @@ export const WritingView: React.FC<WritingViewProps> = ({
     const handleReveal = () => {
         setChecked(true);
         if (isTimeOut) { playSfx(150, 'sawtooth', 0.1); } else { playSfx(600, 'sine', 0.1); }
+        speakText(vocab.ka || vocab.kj, 'ja-JP');
     };
 
     const handleGrade = (correct: boolean) => {

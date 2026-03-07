@@ -22,7 +22,7 @@ interface StudyViewProps {
 }
 
 export const StudyView: React.FC<StudyViewProps> = ({ 
-    vocab, index, total, isFavorite, kanjiSize, onNext, onPrev, onToggleFav, onKanjiClick, studyType, onTypeChange, vocabList, onJump
+    vocab, index, total, isFavorite, kanjiSize, onNext, onPrev, onToggleFav, onKanjiClick, studyType, onTypeChange, vocabList, onJump, lessonId
 }) => {
     
     const [showFavList, setShowFavList] = useState(false);
@@ -195,6 +195,11 @@ export const StudyView: React.FC<StudyViewProps> = ({
         >
             {/* 1. Header & Type Switcher */}
             <div className="flex-none pt-14 pb-2 px-4 flex flex-col items-center justify-center gap-2 z-20">
+                {lessonId && (
+                    <div className="absolute top-4 left-4 text-[10px] md:text-xs font-black uppercase text-indigo-300 tracking-widest border border-indigo-500/50 px-3 py-1.5 rounded-lg bg-indigo-900/40 shadow-[0_0_10px_rgba(99,102,241,0.2)]">
+                        {lessonId === 'SRS' ? 'ÔN TẬP' : `BÀI ${lessonId}`}
+                    </div>
+                )}
                 <div className="flex items-center justify-center gap-4 w-full max-w-md relative">
                     {/* Left: List Button */}
                     <button 

@@ -190,7 +190,19 @@ export const BlitzGameView: React.FC<BlitzGameViewProps> = ({ lessonId, vocabLis
 
     return (
         <div className={`absolute inset-0 flex flex-col overflow-hidden transition-colors duration-200`}>
-            <div className="h-16 flex justify-between items-end px-6 pb-2 shrink-0 z-20 relative">
+            {/* Top Navigation / Info */}
+            <div className="absolute top-4 left-4 z-30 flex items-center gap-4 pointer-events-auto">
+                <button onClick={onClose} className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center text-slate-300 hover:text-white hover:bg-white/10 transition backdrop-blur-md shrink-0">
+                    <i className="fas fa-chevron-left"></i>
+                </button>
+                {lessonId && (
+                    <div className="text-[10px] md:text-xs font-black uppercase text-indigo-300 tracking-widest border border-indigo-500/50 px-3 py-1.5 rounded-lg bg-indigo-900/40 shadow-[0_0_10px_rgba(99,102,241,0.2)] backdrop-blur-md">
+                        {lessonId === 'SRS' ? 'ÔN TẬP' : `BÀI ${lessonId}`}
+                    </div>
+                )}
+            </div>
+            
+            <div className="h-20 flex justify-between items-end px-6 pb-2 shrink-0 z-20 relative mt-4">
                 <div className="flex gap-2 mb-1">
                     {[1, 2, 3].map(i => <i key={i} className={`fas fa-heart text-lg transition-all drop-shadow-md ${i <= lives ? 'text-rose-500 animate-pulse' : 'text-slate-800'}`}></i>)}
                 </div>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Vocab } from '../../types';
 import { motion, AnimatePresence } from 'motion/react';
-import { playSfx } from '../../services/audioService';
+import { playSfx, speakText } from '../../services/audioService';
 import { Delete, ChevronLeft, ChevronRight, X } from 'lucide-react';
 
 interface TypingModeViewProps {
@@ -11,6 +11,7 @@ interface TypingModeViewProps {
     onPrev: () => void;
     currentIndex: number;
     total: number;
+    lessonId?: string;
 }
 
 const KEYBOARD_LAYOUT = [
@@ -27,7 +28,7 @@ const KEYBOARD_LAYOUT = [
     ['ん', 'ー', '', '', '']
 ];
 
-export const TypingModeView: React.FC<TypingModeViewProps> = ({ vocabList, onClose, onNext, onPrev, currentIndex, total }) => {
+export const TypingModeView: React.FC<TypingModeViewProps> = ({ vocabList, onClose, onNext, onPrev, currentIndex, total, lessonId }) => {
     const vocab = vocabList[currentIndex];
     
     const [inputs, setInputs] = useState({ kana: '', romaji: '', hanviet: '' });
@@ -81,6 +82,10 @@ export const TypingModeView: React.FC<TypingModeViewProps> = ({ vocabList, onClo
             setTimeout(() => setShake(false), 500);
             playSfx(150, 'sawtooth', 0.2);
         }
+        
+        // Always speak the word when showing answer
+        speakText(vocab.ka || vocab.kj, 'ja-JP');
+        
         setShowKeyboardOverlay(false);
         setCountdown(5);
     };
@@ -176,10 +181,15 @@ export const TypingModeView: React.FC<TypingModeViewProps> = ({ vocabList, onClo
         <div className={`fixed inset-0 flex flex-col overflow-hidden transition-colors duration-500 bg-[#0F172A] text-[#F8FAFC] border-4 ${getBorderColor()} box-border`}>
             
             {/* TOP NAVIGATION */}
-            <div className="absolute top-4 left-4 z-20 flex items-center pointer-events-auto">
-                <button onClick={onClose} className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center text-slate-300 hover:text-white hover:bg-white/10 transition backdrop-blur-md">
+            <div className="absolute top-4 left-4 z-20 flex items-center gap-4 pointer-events-auto w-full pr-8">
+                <button onClick={onClose} className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center text-slate-300 hover:text-white hover:bg-white/10 transition backdrop-blur-md shrink-0">
                     <ChevronLeft size={24} />
                 </button>
+                {lessonId && (
+                    <div className="text-[10px] md:text-xs font-black uppercase text-indigo-300 tracking-widest border border-indigo-500/50 px-3 py-1.5 rounded-lg bg-indigo-900/40 shadow-[0_0_10px_rgba(99,102,241,0.2)] backdrop-blur-md">
+                        {lessonId === 'SRS' ? 'ÔN TẬP' : `BÀI ${lessonId}`}
+                    </div>
+                )}
             </div>
 
             {/* LAYER 1: INFO (25%) - Sticky Header */}
@@ -202,7 +212,7 @@ export const TypingModeView: React.FC<TypingModeViewProps> = ({ vocabList, onClo
                     {/* Input 1: Kana */}
                     <div className={`w-full flex h-20 rounded-2xl border-2 overflow-hidden transition-all relative bg-[#1E293B]/70 backdrop-blur-[10px] shrink-0 ${focusedInput === 'kana' && status === 'typing' ? 'border-[#38BDF8] shadow-[0_0_15px_rgba(56,189,248,0.3)]' : status === 'correct' ? 'border-[#10B981] bg-[#10B981]/10' : status === 'wrong' ? 'border-[#F43F5E] bg-[#F43F5E]/10' : 'border-white/10'}`}>
                         <motion.div 
-                            className="bg-black/20 flex items-center px-6 cursor-pointer overflow-hidden h-full"
+                            className="bg-black/20 flex items-center px-6 cursor-pointer overflow-hidden h-full relative"
                             animate={{ width: status === 'typing' ? '100%' : '60%' }}
                             onClick={() => { 
                                 if (status === 'typing') {
@@ -211,8 +221,11 @@ export const TypingModeView: React.FC<TypingModeViewProps> = ({ vocabList, onClo
                                 }
                             }}
                         >
-                            <span className="text-2xl md:text-3xl font-black text-white truncate">{inputs.kana}</span>
-                            {focusedInput === 'kana' && status === 'typing' && <span className="w-0.5 h-8 bg-[#38BDF8] animate-pulse ml-1"></span>}
+                            {!inputs.kana && status === 'typing' && (
+                                <span className="absolute left-6 text-slate-500 font-bold text-xl md:text-2xl pointer-events-none">Hira/Kata...</span>
+                            )}
+                            <span className="text-2xl md:text-3xl font-black text-white truncate relative z-10">{inputs.kana}</span>
+                            {focusedInput === 'kana' && status === 'typing' && <span className="w-0.5 h-8 bg-[#38BDF8] animate-pulse ml-1 relative z-10"></span>}
                         </motion.div>
                         <AnimatePresence>
                             {status !== 'typing' && (
